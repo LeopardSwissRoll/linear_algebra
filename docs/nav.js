@@ -2,7 +2,7 @@
 // 페이지 추가 시 pages 배열에 항목 추가만 하면 됨. 기존 HTML 수정 불필요.
 
 var NAV_DATA = {
-  xp: { level: 2, percent: 15 },
+  xp: { level: 3, percent: 30 },
 
   // flat 배열 = 페이지 순서. pages[i-1]=prev, pages[i+1]=next (선형, 순환 아님)
   pages: [
@@ -110,6 +110,14 @@ var NAV_DATA = {
       badge: "lesson",
       group: "Phase 2 \u2014 \uD589\uB82C = \uBCC0\uD658",
       subLabel: "\uD83D\uDCD0 \uC5ED\uD589\uB82C & \uD589\uB82C\uC2DD",
+    },
+    {
+      id: "p2_06",
+      file: "p2_06_\uCCB4\uD06C\uD3EC\uC778\uD2B8.html",
+      title: "\uCCB4\uD06C\uD3EC\uC778\uD2B8",
+      badge: "checkpoint",
+      group: "Phase 2 \u2014 \uD589\uB82C = \uBCC0\uD658",
+      subLabel: "\u2705 \uCCB4\uD06C\uD3EC\uC778\uD2B8",
     },
   ],
 };
