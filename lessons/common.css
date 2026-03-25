@@ -1,0 +1,322 @@
+/* ================================================================
+   MyAcademy — 공통 수업 스타일시트
+   ================================================================ */
+
+:root {
+    --bg: #0d0d1a;
+    --surface: #151528;
+    --surface2: #1a1a30;
+    --border: rgba(100, 100, 160, 0.15);
+    --text: #c8c8d4;
+    --text-bright: #e8e8f0;
+    --text-dim: #6a6a80;
+    --vec-a: #e8c840;
+    --vec-b: #58c4dd;
+    --vec-c: #83c167;
+    --proj: #fc6255;
+    --positive: #83c167;
+    --negative: #fc6255;
+    --zero: #e8c840;
+    --accent: #ab6bdb;
+}
+
+/* ── Reset & Base ── */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans KR', -apple-system, 'Malgun Gothic', sans-serif;
+    line-height: 1.8;
+    min-height: 100vh;
+}
+
+/* ── Lesson Container ── */
+.lesson {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+}
+
+/* ── Header ── */
+.lesson-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding-top: 1rem;
+}
+.phase-badge {
+    display: inline-block;
+    background: rgba(232, 200, 64, 0.12);
+    color: var(--vec-a);
+    padding: 0.3rem 1.2rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+}
+.lesson-header h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--text-bright);
+    margin: 1rem 0 0.5rem;
+}
+.lesson-header .subtitle {
+    color: var(--text-dim);
+    font-size: 1.05rem;
+    font-weight: 300;
+}
+
+/* ── Sections ── */
+section { margin-bottom: 3rem; }
+section h2 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--text-bright);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+}
+section p {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+}
+
+/* ── Formula Box ── */
+.formula-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.5rem;
+    text-align: center;
+    margin: 1.5rem 0;
+}
+.formula-box .note {
+    margin-top: 0.8rem;
+    font-size: 0.9rem;
+    color: var(--text-dim);
+}
+
+/* ── Interactive Area ── */
+.interactive-section {
+    display: flex;
+    gap: 1.5rem;
+    align-items: stretch;
+}
+.canvas-wrap {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+canvas {
+    border-radius: 12px;
+    cursor: default;
+    display: block;
+    background: #0a0a15;
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+    max-width: 100%;
+    height: auto;
+}
+
+/* ── Canvas Controls ── */
+.canvas-controls {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+    font-size: 0.85rem;
+}
+.canvas-controls label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--text-dim);
+    cursor: pointer;
+    user-select: none;
+}
+.canvas-controls input[type="checkbox"] { accent-color: var(--accent); }
+.btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 0.35rem 0.9rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-family: inherit;
+    transition: all 0.2s;
+}
+.btn:hover {
+    background: var(--surface2);
+    color: var(--text);
+    border-color: rgba(100, 100, 160, 0.3);
+}
+.hint-text {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    font-style: italic;
+}
+
+/* ── Math Panel ── */
+.math-panel {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    min-width: 280px;
+}
+.math-panel h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-bright);
+    margin-bottom: 1.2rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+}
+.calc-group { margin-bottom: 1rem; }
+.calc-group .label {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.2rem;
+}
+.calc-row {
+    font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace;
+    font-size: 0.92rem;
+    line-height: 1.6;
+}
+
+/* ── Value Colors ── */
+.va    { color: var(--vec-a); }
+.vb    { color: var(--vec-b); }
+.vc    { color: var(--vec-c); }
+.vd    { font-weight: 700; }
+.vd.positive { color: var(--positive); }
+.vd.negative { color: var(--negative); }
+.vd.zero     { color: var(--zero); }
+.vang  { color: var(--accent); }
+.vproj { color: var(--proj); }
+
+/* ── Sign Indicators ── */
+.dot-indicator {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    margin-right: 0.4rem;
+    vertical-align: middle;
+    transition: background 0.3s;
+}
+.sign-badge {
+    display: inline-block;
+    padding: 0.15rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-left: 0.3rem;
+}
+.sign-badge.positive { background: rgba(131, 193, 103, 0.15); color: var(--positive); }
+.sign-badge.negative { background: rgba(252, 98, 85, 0.15);   color: var(--negative); }
+.sign-badge.zero     { background: rgba(232, 200, 64, 0.15);  color: var(--zero); }
+
+/* ── Rule Cards ── */
+.rule-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-top: 1rem;
+}
+.rule-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.2rem;
+    text-align: center;
+    transition: border-color 0.3s, transform 0.2s;
+}
+.rule-card:hover { border-color: rgba(100, 100, 160, 0.35); transform: translateY(-2px); }
+.rule-card .condition { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.3rem; }
+.rule-card .meaning   { font-size: 0.85rem; color: var(--text-dim); }
+.rule-card .usage     { margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-dim); }
+.rule-card.pos  .condition { color: var(--positive); }
+.rule-card.zero .condition { color: var(--zero); }
+.rule-card.neg  .condition { color: var(--negative); }
+
+/* ── Info Cards (generic) ── */
+.info-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+.info-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.2rem;
+    transition: border-color 0.3s, transform 0.2s;
+}
+.info-card:hover { border-color: rgba(100, 100, 160, 0.35); transform: translateY(-2px); }
+.info-card h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-bright);
+    margin-bottom: 0.5rem;
+}
+.info-card p {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    margin-bottom: 0;
+}
+
+/* ── Exercises ── */
+.exercises ol { padding-left: 1.5rem; }
+.exercises li {
+    margin-bottom: 0.8rem;
+    font-size: 0.95rem;
+}
+.exercises li strong { color: var(--text-bright); }
+
+/* ── Callout Box ── */
+.callout {
+    background: var(--surface);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 1rem 1.2rem;
+    margin: 1.5rem 0;
+    font-size: 0.95rem;
+}
+.callout.warn  { border-left-color: var(--vec-a); }
+.callout.good  { border-left-color: var(--positive); }
+.callout .callout-title {
+    font-weight: 600;
+    color: var(--text-bright);
+    margin-bottom: 0.3rem;
+}
+
+/* ── Lesson Footer ── */
+.lesson-footer {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
+    margin-top: 2rem;
+}
+.lesson-footer a {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.2s;
+}
+.lesson-footer a:hover { color: var(--text); }
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+    .interactive-section { flex-direction: column; align-items: center; }
+    .math-panel { width: 100%; max-width: 600px; min-width: unset; }
+    .rule-cards { grid-template-columns: 1fr; }
+    .lesson-header h1 { font-size: 1.7rem; }
+}

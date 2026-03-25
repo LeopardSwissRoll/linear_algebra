@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 2 — 합성 = 곱셈 | MyAcademy</title>
+    <link rel="stylesheet" href="style.css">
+    <script>
+    MathJax = { tex: { inlineMath: [['$','$']], displayMath: [['$$','$$']] }, svg: { fontCache: 'global' } };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+    <style>
+        .dual-canvas { display:flex; gap:1rem; flex-wrap:wrap; justify-content:center; }
+        .dual-half { flex:1; min-width:280px; max-width:450px; }
+        .dual-half canvas { max-width:100%; height:auto; border-radius:10px; }
+        .dual-label { text-align:center; font-weight:700; font-size:0.95rem; margin-bottom:0.5rem; padding:0.35rem 0.6rem; border-radius:6px; }
+        .dual-label.lab-ab { background:rgba(131,193,103,0.1); color:var(--positive); }
+        .dual-label.lab-ba { background:rgba(88,196,221,0.1); color:var(--accent-blue); }
+        .eq-badge { text-align:center; font-weight:700; font-size:1rem; padding:0.5rem; border-radius:8px; margin:0.75rem 0; }
+        .eq-badge.yes { background:rgba(131,193,103,0.1); color:var(--positive); border:1px solid rgba(131,193,103,0.25); }
+        .eq-badge.no { background:rgba(252,98,85,0.08); color:var(--negative); border:1px solid rgba(252,98,85,0.2); }
+        .preset-row { display:flex; gap:0.4rem; flex-wrap:wrap; margin-top:0.4rem; align-items:center; }
+        .preset-row .row-label { font-weight:700; font-size:0.85rem; min-width:2rem; color:var(--text-secondary); }
+        .pbtn { font-size:0.75rem; padding:0.25rem 0.55rem; background:var(--bg-surface); border:1px solid var(--border); border-radius:4px; cursor:pointer; color:var(--text-primary); font-family:inherit; transition:all 0.2s; }
+        .pbtn:hover, .pbtn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+        .t-slider-row { display:flex; align-items:center; gap:1rem; margin-top:0.75rem; font-size:0.9rem; }
+        .t-slider-row input[type="range"] { flex:1; max-width:300px; accent-color:var(--accent); }
+        .t-slider-row .t-val { font-family:var(--font-code); font-weight:700; color:var(--accent); min-width:3rem; }
+        .mat-display { display:flex; gap:1.5rem; flex-wrap:wrap; justify-content:center; align-items:flex-start; margin:0.8rem 0; }
+        .mat-block { text-align:center; }
+        .mat-block .mat-label { font-size:0.72rem; color:var(--text-secondary); margin-bottom:0.3rem; font-weight:600; letter-spacing:0.08em; }
+        .mat-block .mat-vals { font-family:var(--font-code); font-size:0.88rem; line-height:1.6; padding:0.3rem 0.6rem; border-left:2px solid var(--text-secondary); border-right:2px solid var(--text-secondary); }
+        .mat-eq { font-size:1.2rem; color:var(--text-secondary); align-self:center; padding-top:1rem; }
+        .step-info { text-align:center; font-weight:600; font-size:0.95rem; margin-top:0.5rem; padding:0.4rem; border-radius:6px; background:var(--bg-surface); }
+        .cmp-table { width:100%; border-collapse:collapse; margin:1rem 0; font-size:0.9rem; }
+        .cmp-table th, .cmp-table td { padding:0.5rem 0.7rem; border:1px solid var(--border); text-align:center; }
+        .cmp-table th { background:rgba(171,107,219,0.08); color:var(--accent); font-weight:600; font-size:0.8rem; }
+        .cmp-table td:first-child { text-align:left; font-weight:600; color:var(--text-secondary); font-size:0.85rem; }
+    </style>
+</head>
+<body>
+  <header class="header">
+    <button class="hamburger" id="hamburger" aria-label="메뉴"><span></span><span></span><span></span></button>
+    <div class="header-logo">MyAcademy<span class="subtitle">선형대수 × 그래픽스 × AI</span></div>
+    <button class="theme-toggle" id="themeToggle" aria-label="테마 전환"><span class="theme-toggle-icon"></span></button>
+  </header>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <nav class="sidebar" id="sidebar"></nav>
+
+  <main class="main-content">
+    <div class="content">
+      <div class="page-title">
+        <div class="tag tag-lesson">PHASE 2</div>
+        <h1>합성 = 곱셈 (AB ≠ BA)</h1>
+        <p class="page-desc">변환을 연달아 적용하면 행렬을 곱하면 된다. 단, 순서가 바뀌면 결과가 다르다.</p>
+      </div>
+
+      <!-- ══════════ 1. 직관 ══════════ -->
+      <section>
+        <h2 id="intuition">합성의 직관 — "먼저 B, 그다음 A"</h2>
+        <div class="formula-box">
+          $$A(B\vec{v}) = (AB)\vec{v}$$
+          <p class="note"><strong>오른쪽에서 왼쪽으로 읽는다.</strong> $AB$는 "B 먼저, A 나중".</p>
+        </div>
+      </section>
+
+      <!-- ══════════ 2. AB ≠ BA ══════════ -->
+      <section>
+        <h2 id="noncommutative">AB ≠ BA — 순서가 다르면 결과가 다르다</h2>
+        <p>같은 두 변환을 <strong>순서만 바꿔서</strong> 적용하면 결과가 달라진다. 직접 비교해봐.</p>
+
+        <div class="interactive-section">
+          <div class="preset-row">
+            <span class="row-label">A =</span>
+            <button class="pbtn a-btn active" data-i="0">90° 회전</button>
+            <button class="pbtn a-btn" data-i="1">45° 회전</button>
+            <button class="pbtn a-btn" data-i="2">X ×2</button>
+            <button class="pbtn a-btn" data-i="3">Y ×2</button>
+            <button class="pbtn a-btn" data-i="4">x전단</button>
+            <button class="pbtn a-btn" data-i="5">x축 반사</button>
+          </div>
+          <div class="preset-row" style="margin-bottom:0.8rem;">
+            <span class="row-label">B =</span>
+            <button class="pbtn b-btn" data-i="0">90° 회전</button>
+            <button class="pbtn b-btn" data-i="1">45° 회전</button>
+            <button class="pbtn b-btn active" data-i="2">X ×2</button>
+            <button class="pbtn b-btn" data-i="3">Y ×2</button>
+            <button class="pbtn b-btn" data-i="4">x전단</button>
+            <button class="pbtn b-btn" data-i="5">x축 반사</button>
+          </div>
+
+          <div class="canvas-wrap">
+            <canvas id="cvsCmp" width="600" height="600"></canvas>
+            <div class="preset-row" style="justify-content:center;margin-top:0.5rem;">
+              <button class="pbtn mode-btn" data-mode="ab">AB만</button>
+              <button class="pbtn mode-btn active" data-mode="both">겹쳐보기</button>
+              <button class="pbtn mode-btn" data-mode="ba">BA만</button>
+            </div>
+          </div>
+          <div class="eq-badge" id="eqBadge"></div>
+
+          <div class="math-panel">
+            <h3>행렬 계산</h3>
+            <div class="mat-display" id="matDisplay"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ 3. 교환 성립 ══════════ -->
+      <section>
+        <h2 id="commutative-cases">교환법칙이 성립하는 경우</h2>
+        <table class="cmp-table">
+          <thead><tr><th>조합</th><th>AB = BA?</th><th>이유</th></tr></thead>
+          <tbody>
+            <tr><td>회전 + 회전</td><td style="color:var(--positive)">✅</td><td>각도의 덧셈은 교환 가능</td></tr>
+            <tr><td>균등 스케일 + 아무거나</td><td style="color:var(--positive)">✅</td><td>$sI \cdot M = M \cdot sI$</td></tr>
+            <tr><td>스케일 + 스케일</td><td style="color:var(--positive)">✅</td><td>대각행렬끼리는 교환</td></tr>
+            <tr><td>회전 + 비균등 스케일</td><td style="color:var(--negative)">❌</td><td>축 방향이 달라짐</td></tr>
+            <tr><td>전단 + 회전</td><td style="color:var(--negative)">❌</td><td>거의 항상 다름</td></tr>
+          </tbody>
+        </table>
+        <div class="callout">
+          <div class="callout-title">3D에서는 더 심하다</div>
+          <p style="margin-bottom:0;">2D 회전끼리는 교환 가능 (복소수 곱셈이 교환 가능하니까). 하지만 3D 회전끼리는 <strong>교환 불가</strong> — 쿼터니언 곱셈이 비교환이기 때문. (Phase 4)</p>
+        </div>
+      </section>
+
+      <!-- ══════════ 4. 합성의 기하학 ══════════ -->
+      <section>
+        <h2 id="geometry">합성의 기하학 — 기저의 여정</h2>
+        <div class="formula-box">
+          $$AB = \begin{bmatrix} | & | \\ A\vec{b_1} & A\vec{b_2} \\ | & | \end{bmatrix}$$
+          <p class="note">B의 열(= B가 보낸 기저)을 A가 <strong>다시 변환</strong>한 것.</p>
+        </div>
+        <p>슬라이더를 움직이면 2단계로 적용된다: <strong>먼저 B</strong>(t=0→0.5), <strong>그 위에 A</strong>(t=0.5→1).</p>
+
+        <div class="interactive-section">
+          <div class="canvas-wrap">
+            <canvas id="cvsSteps" width="600" height="600"></canvas>
+            <div class="t-slider-row">
+              <span>t =</span>
+              <input type="range" id="stepSlider" min="0" max="1" step="0.005" value="0">
+              <span class="t-val" id="stepVal">0.00</span>
+              <button class="pbtn" id="btnPlay">▶ 재생</button>
+            </div>
+            <div class="step-info" id="stepInfo">원래 격자 (항등)</div>
+          </div>
+          <div class="math-panel">
+            <h3>단계별 추적</h3>
+            <div class="calc-group">
+              <div class="label">e₁의 여정</div>
+              <div class="calc-row" id="stepE1"></div>
+            </div>
+            <div class="calc-group">
+              <div class="label">e₂의 여정</div>
+              <div class="calc-row" id="stepE2"></div>
+            </div>
+            <div class="calc-group" style="padding-top:0.8rem;border-top:1px solid var(--border);">
+              <div class="label">현재 행렬</div>
+              <div class="calc-row" id="stepMat"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ 5. 실전 ══════════ -->
+      <section>
+        <h2 id="practice">실전에서의 합성</h2>
+        <div class="formula-box">
+          $$\vec{v}_{screen} = P \cdot V \cdot M \cdot \vec{v}_{local}$$
+          <p class="note"><strong>M</strong>(Model: 로컬→월드) → <strong>V</strong>(View: 월드→카메라) → <strong>P</strong>(Projection: 카메라→화면). 오른쪽에서 왼쪽으로. (Phase 3)</p>
+        </div>
+        <div class="info-cards">
+          <div class="info-card">
+            <h4>게임 캐릭터의 팔</h4>
+            <p>팔 로컬 회전 → 몸통 위치/회전 → 월드 위치. 각 단계가 행렬 하나, 곱하면 최종 변환.</p>
+          </div>
+          <div class="info-card">
+            <h4>결합법칙: $A(BC) = (AB)C$</h4>
+            <p>교환은 안 되지만, 괄호 묶기는 자유. 어느 둘을 먼저 곱해도 최종 결과는 같다.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ 6. 직접 해보기 ══════════ -->
+      <section class="exercises">
+        <h2 id="exercises">직접 해보기</h2>
+        <ol>
+          <li><strong>비교환 체감:</strong> A = 90° 회전, B = X ×2로 놓고 AB와 BA 비교. "기저의 여정"으로 이유를 설명해봐.</li>
+          <li><strong>교환 확인:</strong> A = 90° 회전, B = 45° 회전으로 바꿔봐. AB = BA인 이유는?</li>
+          <li><strong>합성 직접 계산:</strong> $A = \begin{bmatrix}0&-1\\1&0\end{bmatrix}$, $B = \begin{bmatrix}2&0\\0&1\end{bmatrix}$. $AB$와 $BA$를 손으로 계산하고 캔버스와 비교.</li>
+          <li><strong>단계 관찰:</strong> 합성 캔버스에서 t를 천천히 올려봐. t=0.5 지점에서 B만 적용된 상태를 확인.</li>
+          <li><strong>반사 합성:</strong> A = x축 반사, B = x축 반사. AB는? (힌트: $F^2 = ?$)</li>
+        </ol>
+      </section>
+    </div>
+
+    <div class="page-nav" id="page-nav"></div>
+
+    <script>
+    var PAGE_ID = "p2_04";
+    var ON_THIS_PAGE = [
+      { id: "intuition", label: "합성의 직관" },
+      { id: "noncommutative", label: "AB ≠ BA" },
+      { id: "commutative-cases", label: "교환 성립 경우" },
+      { id: "geometry", label: "합성의 기하학" },
+      { id: "practice", label: "실전" },
+      { id: "exercises", label: "직접 해보기" }
+    ];
+    </script>
+    <script src="nav.js"></script>
+  </main>
+
+  <script src="canvas-lib.js"></script>
+  <script>
+// ============================================================
+//  공통 유틸
+// ============================================================
+function fmt(n,d){ return n.toFixed(d===undefined?2:d); }
+function mv(m,v){ return {x:m[0]*v.x+m[1]*v.y, y:m[2]*v.x+m[3]*v.y}; }
+function det4(m){ return m[0]*m[3]-m[1]*m[2]; }
+function mulMM(a,b){
+    return [a[0]*b[0]+a[1]*b[2], a[0]*b[1]+a[1]*b[3],
+            a[2]*b[0]+a[3]*b[2], a[2]*b[1]+a[3]*b[3]];
+}
+function lerpMat(a,b,t){
+    return [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t,
+            a[2]+(b[2]-a[2])*t, a[3]+(b[3]-a[3])*t];
+}
+function matsEq(a,b){
+    for(var i=0;i<4;i++) if(Math.abs(a[i]-b[i])>0.01) return false;
+    return true;
+}
+
+function drawXGrid(c,m){
+    var ctx=c.ctx;
+    for(var k=-8;k<=8;k++){
+        ctx.strokeStyle=k===0?'rgba(150,150,200,0.35)':'rgba(150,150,200,0.12)';
+        ctx.lineWidth=k===0?1.5:1;
+        var a=c.toS(mv(m,{x:-8,y:k})),b=c.toS(mv(m,{x:8,y:k}));
+        ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+        a=c.toS(mv(m,{x:k,y:-8}));b=c.toS(mv(m,{x:k,y:8}));
+        ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+    }
+}
+function drawPara(c,m){
+    var ctx=c.ctx;
+    var e1=mv(m,{x:1,y:0}),e2=mv(m,{x:0,y:1});
+    var o=c.toS({x:0,y:0}),p1=c.toS(e1),p2=c.toS(e2),p3=c.toS(vadd(e1,e2));
+    var d=det4(m);
+    var base=d>0.01?'131,193,103':d<-0.01?'252,98,85':'200,200,64';
+    ctx.fillStyle='rgba('+base+',0.08)';ctx.strokeStyle='rgba('+base+',0.3)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(o.x,o.y);ctx.lineTo(p1.x,p1.y);ctx.lineTo(p3.x,p3.y);ctx.lineTo(p2.x,p2.y);
+    ctx.closePath();ctx.fill();ctx.stroke();
+}
+function drawBasis(c,m){
+    c.drawVector(mv(m,{x:1,y:0}),c.colors.vecA,"e₁'");
+    c.drawVector(mv(m,{x:0,y:1}),c.colors.vecB,"e₂'");
+    var o=c.toS({x:0,y:0}),ctx=c.ctx;
+    ctx.beginPath();ctx.arc(o.x,o.y,4,0,Math.PI*2);
+    ctx.fillStyle='rgba(200,200,220,0.5)';ctx.fill();
+}
+// L-shape (asymmetric → transformation direction visible)
+var LPTS=[{x:0.3,y:0.3},{x:2,y:0.3},{x:2,y:0.8},{x:0.8,y:0.8},{x:0.8,y:2},{x:0.3,y:2}];
+function drawL(c,m,fill,stroke){
+    var ctx=c.ctx;
+    ctx.beginPath();
+    for(var i=0;i<LPTS.length;i++){
+        var p=c.toS(mv(m,LPTS[i]));
+        if(i===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);
+    }
+    ctx.closePath();
+    ctx.fillStyle=fill||'rgba(171,107,219,0.12)';ctx.fill();
+    ctx.strokeStyle=stroke||'rgba(171,107,219,0.4)';ctx.lineWidth=2;ctx.stroke();
+}
+function fmtMat(m){
+    return '['+fmt(m[0],2)+'  '+fmt(m[1],2)+']<br>['+fmt(m[2],2)+'  '+fmt(m[3],2)+']';
+}
+
+// ============================================================
+//  프리셋 & 전역 상태
+// ============================================================
+var c7 = Math.cos(Math.PI/4), s7 = Math.sin(Math.PI/4);
+var PRESETS = [
+    { name:'90° 회전',  m:[0,-1,1,0] },
+    { name:'45° 회전',  m:[c7,-s7,s7,c7] },
+    { name:'X ×2',     m:[2,0,0,1] },
+    { name:'Y ×2',     m:[1,0,0,2] },
+    { name:'x전단',    m:[1,1,0,1] },
+    { name:'x축 반사',  m:[1,0,0,-1] },
+];
+var A = PRESETS[0].m.slice(); // 90° 회전
+var B = PRESETS[2].m.slice(); // X ×2
+var aIdx = 0, bIdx = 2;
+
+// ============================================================
+//  캔버스 1 — AB vs BA 비교 (단일 캔버스 + 모드 토글)
+// ============================================================
+var cCmp = createCanvas('cvsCmp', {width:600, height:600, unit:50});
+var viewMode = 'both'; // 'ab' | 'ba' | 'both'
+
+document.querySelectorAll('.mode-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+        viewMode = btn.dataset.mode;
+        document.querySelectorAll('.mode-btn').forEach(function(b){b.classList.remove('active');});
+        btn.classList.add('active');
+        renderCompare();
+    });
+});
+
+function renderCompare(){
+    var ab = mulMM(A,B), ba = mulMM(B,A);
+    cCmp.clear(); cCmp.drawGrid();
+
+    // 원래 L (항상 표시 — 기준)
+    drawL(cCmp,[1,0,0,1],'rgba(171,107,219,0.04)','rgba(171,107,219,0.12)');
+
+    if (viewMode === 'ab' || viewMode === 'both') {
+        if (viewMode === 'ab') { drawXGrid(cCmp,ab); drawPara(cCmp,ab); drawBasis(cCmp,ab); }
+        drawL(cCmp,ab,'rgba(131,193,103,0.15)','rgba(131,193,103,0.5)');
+        // AB 레이블
+        var abTip = cCmp.toS(mv(ab,{x:2,y:2}));
+        cCmp.ctx.fillStyle='rgba(131,193,103,0.8)'; cCmp.ctx.font='bold 13px "Noto Sans KR",sans-serif';
+        cCmp.ctx.textAlign='left'; cCmp.ctx.textBaseline='bottom';
+        cCmp.ctx.fillText('AB',abTip.x+6,abTip.y-4);
+    }
+
+    if (viewMode === 'ba' || viewMode === 'both') {
+        if (viewMode === 'ba') { drawXGrid(cCmp,ba); drawPara(cCmp,ba); drawBasis(cCmp,ba); }
+        drawL(cCmp,ba,'rgba(88,196,221,0.15)','rgba(88,196,221,0.5)');
+        // BA 레이블
+        var baTip = cCmp.toS(mv(ba,{x:2,y:2}));
+        cCmp.ctx.fillStyle='rgba(88,196,221,0.8)'; cCmp.ctx.font='bold 13px "Noto Sans KR",sans-serif';
+        cCmp.ctx.textAlign='left'; cCmp.ctx.textBaseline='top';
+        cCmp.ctx.fillText('BA',baTip.x+6,baTip.y+4);
+    }
+
+    // 겹쳐보기 모드일 때 원점 표시
+    if (viewMode === 'both') {
+        var o=cCmp.toS({x:0,y:0}); cCmp.ctx.beginPath(); cCmp.ctx.arc(o.x,o.y,4,0,Math.PI*2);
+        cCmp.ctx.fillStyle='rgba(200,200,220,0.5)'; cCmp.ctx.fill();
+    }
+
+    // Equal badge
+    var eq = matsEq(ab,ba);
+    var badge = document.getElementById('eqBadge');
+    badge.className = 'eq-badge ' + (eq ? 'yes' : 'no');
+    badge.textContent = eq ? 'AB = BA ✓ (교환 가능! 두 L이 겹친다)' : 'AB ≠ BA (순서가 중요! 초록과 시안이 다른 위치)';
+
+    // Matrix display
+    document.getElementById('matDisplay').innerHTML =
+        '<div class="mat-block"><div class="mat-label">A</div><div class="mat-vals">'+fmtMat(A)+'</div></div>' +
+        '<div class="mat-block"><div class="mat-label">B</div><div class="mat-vals">'+fmtMat(B)+'</div></div>' +
+        '<div class="mat-eq">→</div>' +
+        '<div class="mat-block"><div class="mat-label" style="color:var(--positive)">AB</div><div class="mat-vals" style="color:var(--positive)">'+fmtMat(ab)+'</div></div>' +
+        '<div class="mat-block"><div class="mat-label" style="color:var(--accent-blue)">BA</div><div class="mat-vals" style="color:var(--accent-blue)">'+fmtMat(ba)+'</div></div>';
+}
+
+// Preset buttons
+document.querySelectorAll('.a-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+        aIdx = parseInt(btn.dataset.i); A = PRESETS[aIdx].m.slice();
+        document.querySelectorAll('.a-btn').forEach(function(b){b.classList.remove('active');});
+        btn.classList.add('active');
+        renderCompare(); renderSteps();
+    });
+});
+document.querySelectorAll('.b-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+        bIdx = parseInt(btn.dataset.i); B = PRESETS[bIdx].m.slice();
+        document.querySelectorAll('.b-btn').forEach(function(b){b.classList.remove('active');});
+        btn.classList.add('active');
+        renderCompare(); renderSteps();
+    });
+});
+
+renderCompare();
+
+// ============================================================
+//  캔버스 2 — 합성 단계 시각화
+// ============================================================
+var cS = createCanvas('cvsSteps', {width:600, height:600, unit:50});
+var stepT = 0;
+var playing = false, animId = null;
+
+function stepMat(t){
+    var I=[1,0,0,1];
+    if(t<=0.5) return lerpMat(I,B,t*2);
+    return lerpMat(B,mulMM(A,B),(t-0.5)*2);
+}
+
+function renderSteps(){
+    cS.clear(); cS.drawGrid();
+    var ctx = cS.ctx;
+    var m = stepMat(stepT);
+
+    // e₁ trail
+    ctx.fillStyle = 'rgba(232,200,64,0.3)';
+    for(var i=0;i<=40;i++){
+        var tt=i/40;
+        if(tt>stepT+0.01) break;
+        var ep=cS.toS(mv(stepMat(tt),{x:1,y:0}));
+        ctx.beginPath();ctx.arc(ep.x,ep.y,2.5,0,Math.PI*2);ctx.fill();
+    }
+    // e₂ trail
+    ctx.fillStyle = 'rgba(88,196,221,0.3)';
+    for(var i=0;i<=40;i++){
+        var tt=i/40;
+        if(tt>stepT+0.01) break;
+        var ep=cS.toS(mv(stepMat(tt),{x:0,y:1}));
+        ctx.beginPath();ctx.arc(ep.x,ep.y,2.5,0,Math.PI*2);ctx.fill();
+    }
+
+    // L ghost
+    drawL(cS,[1,0,0,1],'rgba(171,107,219,0.04)','rgba(171,107,219,0.1)');
+
+    drawXGrid(cS,m); drawPara(cS,m); drawBasis(cS,m);
+    drawL(cS,m,'rgba(171,107,219,0.1)','rgba(171,107,219,0.35)');
+
+    // Midpoint marker (t=0.5 → B만 적용된 지점)
+    if(stepT >= 0.49){
+        var bE1=cS.toS(mv(B,{x:1,y:0}));
+        ctx.beginPath();ctx.arc(bE1.x,bE1.y,5,0,Math.PI*2);
+        ctx.strokeStyle='rgba(232,200,64,0.5)';ctx.lineWidth=1.5;ctx.stroke();
+    }
+
+    // step info
+    var info = document.getElementById('stepInfo');
+    if(stepT < 0.01) info.textContent = '원래 격자 (항등)';
+    else if(stepT < 0.5) info.textContent = '적용 중: B (' + PRESETS[bIdx].name + ')';
+    else if(Math.abs(stepT-0.5)<0.02) info.textContent = 'B 적용 완료 — 여기서 A를 적용';
+    else if(stepT < 1) info.textContent = '적용 중: A (' + PRESETS[aIdx].name + ') — B 위에';
+    else info.textContent = 'AB 적용 완료';
+
+    // panel
+    var e1 = mv(m,{x:1,y:0}), e2 = mv(m,{x:0,y:1});
+    document.getElementById('stepE1').innerHTML =
+        '(1,0) → <span class="va">('+fmt(e1.x)+', '+fmt(e1.y)+')</span>';
+    document.getElementById('stepE2').innerHTML =
+        '(0,1) → <span class="vb">('+fmt(e2.x)+', '+fmt(e2.y)+')</span>';
+    document.getElementById('stepMat').innerHTML = fmtMat(m);
+}
+
+var stepSlider = document.getElementById('stepSlider');
+var stepVal = document.getElementById('stepVal');
+stepSlider.addEventListener('input', function(e){
+    stepT = parseFloat(e.target.value);
+    stepVal.textContent = fmt(stepT);
+    renderSteps();
+});
+
+document.getElementById('btnPlay').addEventListener('click', function(){
+    if(playing){ playing=false; return; }
+    playing=true; stepT=0;
+    function tick(){
+        if(!playing) return;
+        stepT += 0.008;
+        if(stepT>=1){ stepT=1; playing=false; }
+        stepSlider.value=stepT; stepVal.textContent=fmt(stepT);
+        renderSteps();
+        if(playing) animId=requestAnimationFrame(tick);
+    }
+    tick();
+});
+
+renderSteps();
+  </script>
+</body>
+</html>

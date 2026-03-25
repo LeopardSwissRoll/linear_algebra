@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 1 — 동차 좌표 완전 이해 | MyAcademy</title>
+    <link rel="stylesheet" href="style.css">
+    <script>
+    MathJax = {
+        tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']] },
+        svg: { fontCache: 'global' }
+    };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+    <style>
+        .w-slider-row {
+            display: flex; align-items: center; gap: 1rem;
+            margin-top: 0.75rem; font-size: 0.9rem;
+        }
+        .w-slider-row input[type="range"] {
+            flex: 1; max-width: 300px; accent-color: var(--accent);
+        }
+        .w-slider-row .w-val {
+            font-family: 'Cascadia Code', Consolas, monospace;
+            font-weight: 700; color: var(--accent); min-width: 3.5rem;
+        }
+        .equiv-row {
+            display: flex; flex-wrap: wrap; gap: 0.5rem;
+            margin: 1rem 0; align-items: center;
+        }
+        .equiv-chip {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 8px; padding: 0.4rem 0.8rem;
+            font-family: 'Cascadia Code', Consolas, monospace;
+            font-size: 0.9rem; transition: all 0.3s;
+        }
+        .equiv-chip.active {
+            border-color: var(--accent);
+            background: rgba(171,107,219,0.15);
+            color: var(--accent); font-weight: 700;
+        }
+        .equiv-chip .eq { color: var(--text-secondary); margin: 0 0.3rem; }
+        .context-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem; margin-top: 1rem;
+        }
+        .context-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 10px; padding: 1.2rem;
+        }
+        .context-card h4 {
+            color: var(--text-primary); font-size: 0.95rem;
+            margin-bottom: 0.5rem;
+        }
+        .context-card p { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem; }
+        .context-card .key {
+            font-size: 0.85rem; color: var(--accent); font-weight: 600;
+        }
+        .trans-display {
+            display: flex; gap: 1.5rem; margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+        .trans-display > div {
+            flex: 1; min-width: 240px;
+            background: var(--bg-surface); border: 1px solid var(--border);
+            border-radius: 10px; padding: 1rem;
+        }
+        .trans-display h4 { font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .trans-display .mat {
+            font-family: 'Cascadia Code', Consolas, monospace;
+            font-size: 0.85rem; line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+  <header class="header">
+    <button class="hamburger" id="hamburger" aria-label="메뉴"><span></span><span></span><span></span></button>
+    <div class="header-logo">MyAcademy<span class="subtitle">선형대수 × 그래픽스 × AI</span></div>
+    <button class="theme-toggle" id="themeToggle" aria-label="테마 전환"><span class="theme-toggle-icon"></span></button>
+  </header>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <nav class="sidebar" id="sidebar"></nav>
+
+  <main class="main-content">
+    <div class="content">
+      <div class="page-title">
+        <div class="tag tag-supplement">SUPPLEMENT</div>
+        <h1>동차 좌표 완전 이해</h1>
+        <p class="page-desc">"Homogeneous"가 도대체 무슨 뜻인가</p>
+      </div>
+
+      <!-- ════════════════════════════════════════════════════════════ -->
+      <!-- 1. 단어의 정체 -->
+      <!-- ════════════════════════════════════════════════════════════ -->
+      <section class="concept-intro">
+          <h2 id="homogeneous-meaning">수학에서 "Homogeneous"란</h2>
+          <p>
+              이 단어가 헷갈리는 이유가 있다.
+              선형대수, 미분방정식, 사영기하학에서 전부 쓰이는데, 다 다른 맥락처럼 보인다.
+              하지만 <strong>공통된 핵심이 딱 하나</strong> 있다:
+          </p>
+          <div class="formula-box">
+              <p style="font-size:1.15rem;font-weight:600;color:var(--text-primary);margin-bottom:0;">
+                  "스케일을 바꿔도 본질이 안 바뀐다"
+              </p>
+          </div>
+          <div class="context-grid">
+              <div class="context-card">
+                  <h4>동차 방정식 · $A\vec{x} = \vec{0}$</h4>
+                  <p>$\vec{x}$가 해면 $k\vec{x}$도 해. 스케일해도 해가 유지된다.</p>
+                  <p class="key">→ 해 공간이 스케일에 닫혀있음</p>
+              </div>
+              <div class="context-card">
+                  <h4>동차 함수 · $f(t\vec{x}) = t^n f(\vec{x})$</h4>
+                  <p>입력을 스케일하면 출력도 예측 가능하게 스케일된다.</p>
+                  <p class="key">→ 스케일에 대해 "균질"하게 반응</p>
+              </div>
+              <div class="context-card">
+                  <h4>동차 다항식 · 모든 항이 같은 차수</h4>
+                  <p>$ax^2 + bxy + cy^2$ — 모든 항이 2차. $ax^2 + bx + c$는 아님.</p>
+                  <p class="key">→ "같은 차수" = homo (같은) + genus (종류)</p>
+              </div>
+              <div class="context-card">
+                  <h4 style="color:var(--accent);">동차 좌표 · $(x, y, w) \sim (kx, ky, kw)$</h4>
+                  <p>전부 같은 비율로 스케일하면 같은 점. <strong>비율만이 의미를 가진다.</strong></p>
+                  <p class="key">→ 이것이 오늘 배울 것</p>
+              </div>
+          </div>
+      </section>
+
+      <!-- ════════════════════════════════════════════════════════════ -->
+      <!-- 2. 어원 연결 -->
+      <!-- ════════════════════════════════════════════════════════════ -->
+      <section class="concept-intro">
+          <h2 id="etymology">왜 "동차"라는 이름이 붙었나</h2>
+          <p>
+              2D 직선의 방정식 $Ax + By + C = 0$이 있다.
+              여기에 $x = X/w$, $y = Y/w$를 대입하고 양변에 $w$를 곱으면:
+          </p>
+          <div class="formula-box">
+              $$AX + BY + Cw = 0$$
+              <p class="note">
+                  모든 항이 1차(degree 1). 방정식이 <strong>동차(homogeneous)</strong>가 되었다.
+                  이 변환을 가능하게 하는 좌표 $(X, Y, w)$를 "동차 좌표"라고 부른다.
+              </p>
+          </div>
+          <p>
+              동차 다항식의 성질: $F(kX, kY, kw) = k^n \cdot F(X, Y, w)$.
+              원래 $F = 0$이었으면 $k^n \cdot 0 = 0$이므로, $(kX, kY, kw)$도 해다.
+              <strong>같은 비율로 스케일해도 해가 유지된다</strong> — 이것이 동차 좌표의 이름의 이유이자 본질이다.
+          </p>
+      </section>
+
+      <!-- ════════════════════════════════════════════════════════════ -->
+      <!-- 3. w의 기하학적 의미 -->
+      <!-- ════════════════════════════════════════════════════════════ -->
+      <section class="concept-intro">
+          <h2 id="w-geometry">w가 뭔데? — 레이(ray)로 본다</h2>
+          <p>
+              2D 점 $(x, y)$를 동차 좌표로 쓰면 3D 공간의 점 $(X, Y, w)$가 된다.
+              실제 2D 점은 $w = 1$ 평면과의 교점으로 복원한다: $(X/w, \; Y/w)$.
+          </p>
+          <p>
+              핵심: <strong>원점에서 $(X, Y, w)$를 잇는 직선(ray) 위의 모든 점은 같은 2D 점을 나타낸다.</strong>
+              $(3, 2, 1)$과 $(6, 4, 2)$와 $(9, 6, 3)$은 3D에서는 다른 점이지만,
+              같은 ray 위에 있으므로 $w = 1$ 평면과 같은 곳에서 만난다 → 같은 2D 점 $(3, 2)$.
+          </p>
+      </section>
+
+      <!-- ════════════════════════════════════════════════════════════ -->
+      <!-- Interactive 1: w-평면 투영 시각화 -->
+      <!-- ════════════════════════════════════════════════════════════ -->
+      <section>
+          <h2 id="interactive-w">인터랙티브 — w를 바꿔보기</h2>
+          <p>
+              아래에서 $w$ 슬라이더를 움직이면, 동차 좌표 $(X, Y, w)$가 바뀐다.
+              하지만 $w = 1$ 평면 위의 실제 점은 <strong>움직이지 않는다</strong>.
+          </p>
+          <div class="canvas-wrap">
+              <canvas id="cvsW" width="600" height="420"></canvas>
+              <div class="w-slider-row">
+                  <span>w =</span>
+                  <input type="range" id="wSlider" min="0" max="3" step="0.05" value="1">
+                  <span class="w-val" id="wVal">1.00</span>
+                  <button class="btn" id="btnResetW">w = 1</button>
+              </div>
+          </div>
+          <div class="equiv-row" id="equivRow"></div>
+          <p style="font-size:0.9rem;color:var(--text-secondary);margin-top:0.5rem;">
+              ↑ 이 칩들은 전부 <strong>같은 2D 점</strong>을 나타낸다. 비율이 같으니까.
+          </p>
+      </section>
+
+      <!-- ════════════════════════════════════════════════════════════ -->
+      <!-- w = 0의 의미 -->
+      <!-- ════════════════════════════════════════════════════════════ -->
+      <section class="concept-intro">
+          <h2 id="w-zero">w = 0이면? — 방향 (무한 원점)</h2>
+          <p>
+              $w$를 0으로 슬라이더를 당겨봐. ray가 $w = 1$ 평면에 <strong>평행</strong>해진다.
+              교점이 없다 → 무한히 먼 점 → <strong>방향(direction)</strong>.
+          </p>
+          <p>
+              유클리드 기하에서 "평행선은 만나지 않는다"는 공리가 있다.
+              동차 좌표에서는 만난다 — $w = 0$인 <strong>무한 원점(point at infinity)</strong>에서.
+              사라지는 점(vanishing point)이 바로 이것이다.
+          </p>
+          <div class="callout">
+              <div class="callout-title">1.1 연결 — w = 1이면 점, w = 0이면 방향</div>
+              <p style="margin-bottom:0;">
+                  1.1에서 "원점을 옮기면 점의 좌표는 바뀌고 방향은 안 바뀐다"를 봤다.
+                  그 이유가 이것이다: 이동 행렬을 곱하면 $w = 1$인 성분만 영향을 받고, $w = 0$은 무시된다.
+              </p>
+          </div>
+      </section>
+
+      <!-- ════════════════════════════════════════════════════════════ -->
+      <!-- 왜 w = 1을 쓰는가 -->
+      <!-- ════════════════════════════════════════════════════════════ -->
+      <section class="concept-intro">
+          <h2 id="why-w1">왜 w = 1을 쓰는가? — 꼭 1이어야 하나?</h2>
+          <p>
+              <strong>아니다.</strong> $w$는 1이 아니어도 된다.
+              $(6, 4, 2)$는 완벽히 유효한 동차 좌표이고, 점 $(3, 2)$를 나타낸다.
+          </p>
+          <p>
+              $w = 1$은 그냥 <strong>정규화된 대표값(canonical representative)</strong>이다.
+              $X/w$, $Y/w$를 계산 없이 바로 읽을 수 있으니까 편한 것일 뿐.
+          </p>
+          <p>
+              실전에서 $w \neq 1$이 되는 순간이 있다:
+          </p>
+          <div class="info-cards">
+              <div class="info-card">
+                  <h4>원근 투영 후</h4>
+                  <p>
+                      카메라의 원근 투영 행렬을 곱하면 $w$에 깊이값($z$)이 들어간다.
+                      가까운 물체는 $w$가 작고, 먼 물체는 $w$가 크다.
+                      $x/w$, $y/w$로 나누면 — 먼 것이 작아지는 원근감이 생긴다.
+                      이것이 <strong>perspective divide</strong>.
+                  </p>
+              </div>
+              <div class="info-card">
+                  <h4>가중 평균 (아핀 결합)</h4>
+                  <p>
+                      1.1에서 "위치 + 위치 = ???"이 의미 없다고 했다.
+                      동차 좌표에서 $(x_1,y_1,1) + (x_2,y_2,1) = (x_1+x_2, y_1+y_2, 2)$.
+                      $w$로 나누면 $(\frac{x_1+x_2}{2}, \frac{y_1+y_2}{2})$ — <strong>중점</strong>이다.
+                  </p>
+              </div>
+          </div>
+      </section>
+
+      <!-- ════════════════════════════════════════════════════════════ -->
+      <!-- Interactive 2: 이동 행렬 데모 -->
+      <!-- ════════════════════════════════════════════════════════════ -->
+      <section>
+          <h2 id="interactive-translate">인터랙티브 — 이동 행렬의 비밀</h2>
+          <p>
+              $t_x$ 슬라이더로 이동량을 조절해봐.
+              <span style="color:var(--vec-a);">점(w=1)</span>은 움직이고,
+              <span style="color:var(--vec-b);">방향(w=0)</span>은 꿈쩍도 안 한다.
+          </p>
+          <div class="canvas-wrap">
+              <canvas id="cvsTrans" width="600" height="360"></canvas>
+              <div class="w-slider-row">
+                  <span>$t_x$ =</span>
+                  <input type="range" id="txSlider" min="-4" max="4" step="0.1" value="0">
+                  <span class="w-val" id="txVal">0.0</span>
+                  <button class="btn" id="btnResetTx">리셋</button>
+              </div>
+          </div>
+          <div class="trans-display">
+              <div>
+                  <h4 style="color:var(--vec-a);">점 (w = 1)</h4>
+                  <div class="mat" id="transPoint"></div>
+              </div>
+              <div>
+                  <h4 style="color:var(--vec-b);">방향 (w = 0)</h4>
+                  <div class="mat" id="transDir"></div>
+              </div>
+          </div>
+      </section>
+
+      <!-- ════════════════════════════════════════════════════════════ -->
+      <!-- 정리 -->
+      <!-- ════════════════════════════════════════════════════════════ -->
+      <section>
+          <h2 id="summary">한 문장 정리</h2>
+          <div class="formula-box">
+              <p style="font-size:1rem;color:var(--text-primary);line-height:1.8;margin-bottom:0;">
+                  동차 좌표는 $w$라는 차원을 하나 추가해서,<br>
+                  N차원의 각 점을 (N+1)차원의 <strong>원점을 지나는 직선(ray)</strong>으로 표현하고,<br>
+                  이를 $w = 1$ 평면에 투영해 원래 점을 복원하는 체계다.<br>
+                  <span style="color:var(--text-secondary);font-size:0.9rem;">
+                      "동차"라는 이름은 이 좌표가 다항식 방정식을 <strong>동차(모든 항이 같은 차수)</strong>로 만들기 때문이다.
+                      스케일 불변 — 이것이 수학 전체에서 "homogeneous"가 의미하는 단 하나의 본질이다.
+                  </span>
+              </p>
+          </div>
+      </section>
+
+      <!-- ────── 직접 해보기 ────── -->
+      <section class="exercises">
+          <h2 id="exercises">직접 해보기</h2>
+          <ol>
+              <li><strong>등가 확인:</strong> $w$를 2로 맞추고, 동차 좌표가 $(6, 4, 2)$인 걸 확인. 실제 점 $(3, 2)$는 안 바뀌는지.</li>
+              <li><strong>방향 체험:</strong> $w$를 0으로 가져가봐. ray가 평행해지면서 "교점 없음 = 방향"이 되는 걸 확인.</li>
+              <li><strong>이동 테스트:</strong> $t_x$를 움직여서 점만 이동하고 방향은 그대로인 걸 확인.</li>
+              <li><strong>중점 계산:</strong> $(1, 0, 1) + (3, 0, 1) = (4, 0, 2)$. $w$로 나누면? 두 점의 중점인지 확인.</li>
+          </ol>
+      </section>
+    </div>
+
+    <div class="page-nav" id="page-nav"></div>
+
+    <script>
+    var PAGE_ID = "p1_05";
+    var ON_THIS_PAGE = [
+      { id: "homogeneous-meaning", label: "Homogeneous란" },
+      { id: "etymology", label: "왜 동차인가" },
+      { id: "w-geometry", label: "w의 기하학" },
+      { id: "interactive-w", label: "w 슬라이더" },
+      { id: "w-zero", label: "w = 0이면?" },
+      { id: "why-w1", label: "왜 w = 1인가" },
+      { id: "interactive-translate", label: "이동 행렬" },
+      { id: "summary", label: "한 문장 정리" },
+      { id: "exercises", label: "직접 해보기" }
+    ];
+    </script>
+    <script src="nav.js"></script>
+  </main>
+
+  <script src="canvas-lib.js"></script>
+  <script>
+/* ================================================================
+   Canvas 1 — w-평면 투영: 측면도 (x축 가로, w축 세로)
+   원점에서 (X, w)를 잇는 ray가 w=1 직선과 만나는 점 = 실제 좌표
+   ================================================================ */
+const c1 = createCanvas('cvsW', { width: 600, height: 420, unit: 60 });
+const baseX = 3, baseY = 2; // 고정된 실제 2D 점
+let wVal = 1;
+
+function render1() {
+    c1.clear();
+    const ctx = c1.ctx;
+
+    // 좌표계: 가로 = X, 세로 = w
+    // w=1 수평선
+    const w1Left  = c1.toS({ x: -5.5, y: 1 });
+    const w1Right = c1.toS({ x: 5.5,  y: 1 });
+    ctx.strokeStyle = 'rgba(171,107,219,0.4)'; ctx.lineWidth = 2;
+    ctx.setLineDash([8, 4]);
+    ctx.beginPath(); ctx.moveTo(w1Left.x, w1Left.y); ctx.lineTo(w1Right.x, w1Right.y); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(171,107,219,0.5)'; ctx.font = '13px "Noto Sans KR", sans-serif';
+    ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
+    ctx.fillText('w = 1 평면', w1Right.x - 8, w1Right.y - 6);
+
+    // 격자 (가로=X, 세로=w)
+    c1.drawGrid();
+
+    // 축 라벨
+    ctx.fillStyle = 'rgba(200,200,220,0.5)'; ctx.font = 'bold 13px Consolas, monospace';
+    const xLabel = c1.toS({ x: 5.2, y: 0 });
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText('X', xLabel.x, xLabel.y + 6);
+    const wLabel = c1.toS({ x: 0, y: 3.8 });
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillText('w', wLabel.x - 8, wLabel.y);
+
+    // 동차 좌표 점: (baseX * wVal, wVal) in the X-w plane
+    const homoX = baseX * wVal;
+    const homoPoint = { x: homoX, y: wVal };
+
+    // 원점에서 ray
+    const o = c1.toS({ x: 0, y: 0 });
+
+    // 실제 ray 방향
+    const rayDirX = homoX;
+    const rayDirW = wVal;
+    const rayLen = Math.sqrt(rayDirX * rayDirX + rayDirW * rayDirW);
+    if (rayLen > 0.01) {
+        const scale = 6 / rayLen;
+        const rayTip = c1.toS({ x: rayDirX * scale, y: rayDirW * scale });
+        ctx.strokeStyle = 'rgba(232,200,64,0.3)'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(o.x, o.y); ctx.lineTo(rayTip.x, rayTip.y); ctx.stroke();
+    }
+
+    // w=1 위의 실제 점 (항상 고정: baseX, 1)
+    const realPt = c1.toS({ x: baseX, y: 1 });
+    ctx.beginPath(); ctx.arc(realPt.x, realPt.y, 8, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(131,193,103,0.25)'; ctx.fill();
+    ctx.strokeStyle = c1.colors.positive; ctx.lineWidth = 2.5; ctx.stroke();
+    ctx.fillStyle = c1.colors.positive; ctx.font = 'bold 13px Consolas, monospace';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.fillText(`(${baseX}, ${baseY})`, realPt.x + 12, realPt.y - 4);
+    ctx.fillStyle = 'rgba(200,200,220,0.4)'; ctx.font = '11px "Noto Sans KR", sans-serif';
+    ctx.fillText('← 실제 2D 점 (불변)', realPt.x + 12, realPt.y + 12);
+
+    // 현재 동차 좌표 점
+    if (wVal > 0.01) {
+        const hp = c1.toS(homoPoint);
+        ctx.beginPath(); ctx.arc(hp.x, hp.y, 7, 0, Math.PI * 2);
+        ctx.fillStyle = c1.colors.vecA; ctx.fill();
+        ctx.strokeStyle = '#fff3'; ctx.lineWidth = 1.5; ctx.stroke();
+        ctx.fillStyle = c1.colors.vecA; ctx.font = 'bold 13px Consolas, monospace';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+        ctx.fillText(`(${homoX.toFixed(1)}, ${(baseY*wVal).toFixed(1)}, ${wVal.toFixed(2)})`, hp.x + 12, hp.y - 4);
+
+        // 점선: 동차 점 → w=1 점 (수직 투영 안내)
+        ctx.strokeStyle = 'rgba(232,200,64,0.2)'; ctx.lineWidth = 1;
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath(); ctx.moveTo(hp.x, hp.y); ctx.lineTo(realPt.x, realPt.y); ctx.stroke();
+        ctx.setLineDash([]);
+    } else {
+        // w ≈ 0: 방향 표시
+        const dirPt = c1.toS({ x: baseX * 2, y: 0 });
+        ctx.fillStyle = c1.colors.vecB; ctx.font = 'bold 13px Consolas, monospace';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+        ctx.fillText(`(${baseX}, ${baseY}, 0) = 방향`, dirPt.x, dirPt.y + 10);
+
+        // 수평 화살표
+        const arrowFrom = c1.toS({ x: 0.3, y: 0 });
+        const arrowTo = c1.toS({ x: baseX * 1.5, y: 0 });
+        ctx.strokeStyle = c1.colors.vecB; ctx.lineWidth = 3; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(arrowFrom.x, arrowFrom.y); ctx.lineTo(arrowTo.x, arrowTo.y); ctx.stroke();
+        c1.arrowhead(arrowFrom.x, arrowFrom.y, arrowTo.x, arrowTo.y, c1.colors.vecB);
+    }
+
+    // 원점 마크
+    ctx.beginPath(); ctx.arc(o.x, o.y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(200,200,220,0.5)'; ctx.fill();
+
+    // 등가 칩 갱신
+    updateEquivChips();
+}
+
+function updateEquivChips() {
+    const row = document.getElementById('equivRow');
+    const scales = [0.5, 1, 1.5, 2, 3];
+    row.innerHTML = scales.map(k => {
+        const isActive = Math.abs(k - wVal) < 0.08;
+        return `<div class="equiv-chip${isActive ? ' active' : ''}">` +
+            `(${(baseX*k).toFixed(1)}, ${(baseY*k).toFixed(1)}, ${k.toFixed(1)})` +
+            `</div>`;
+    }).join('<span class="equiv-chip eq">=</span>');
+}
+
+document.getElementById('wSlider').addEventListener('input', e => {
+    wVal = parseFloat(e.target.value);
+    document.getElementById('wVal').textContent = wVal.toFixed(2);
+    render1();
+});
+document.getElementById('btnResetW').addEventListener('click', () => {
+    wVal = 1; document.getElementById('wSlider').value = '1';
+    document.getElementById('wVal').textContent = '1.00';
+    render1();
+});
+
+
+/* ================================================================
+   Canvas 2 — 이동 행렬 데모
+   ================================================================ */
+const c2 = createCanvas('cvsTrans', { width: 600, height: 360, unit: 50 });
+const ptOrig = { x: 2, y: 1.5 };
+const dirOrig = { x: 2, y: 1 };
+let tx = 0;
+
+function render2() {
+    c2.clear();
+    c2.drawGrid();
+
+    const ptMoved = { x: ptOrig.x + tx, y: ptOrig.y };
+
+    // 원래 위치 (유령)
+    if (Math.abs(tx) > 0.1) {
+        c2.drawPoint(ptOrig, c2.colors.vecA + '33', '');
+        const gs = c2.toS(ptOrig);
+        c2.ctx.fillStyle = c2.colors.vecA + '44';
+        c2.ctx.font = '11px "Noto Sans KR", sans-serif';
+        c2.ctx.textAlign = 'left'; c2.ctx.textBaseline = 'bottom';
+        c2.ctx.fillText('원래', gs.x + 10, gs.y - 6);
+    }
+
+    // 이동된 점 (w=1)
+    c2.drawVector(ptMoved, c2.colors.vecA, '');
+    c2.drawPoint(ptMoved, c2.colors.vecA, '');
+    const ps = c2.toS(ptMoved);
+    c2.ctx.fillStyle = c2.colors.vecA;
+    c2.ctx.font = 'bold 13px Consolas, monospace';
+    c2.ctx.textAlign = 'left'; c2.ctx.textBaseline = 'bottom';
+    c2.ctx.fillText(`P(${ptMoved.x.toFixed(1)}, ${ptMoved.y.toFixed(1)}, 1)`, ps.x + 12, ps.y - 6);
+
+    // 방향 (w=0) — 이동 안 됨
+    c2.drawVector(dirOrig, c2.colors.vecB, '');
+    const ds = c2.toS(dirOrig);
+    c2.ctx.fillStyle = c2.colors.vecB;
+    c2.ctx.fillText(`d(${dirOrig.x.toFixed(1)}, ${dirOrig.y.toFixed(1)}, 0)`, ds.x + 12, ds.y - 6);
+
+    // 이동 화살표 표시
+    if (Math.abs(tx) > 0.1) {
+        const from = c2.toS(ptOrig);
+        const to = c2.toS(ptMoved);
+        c2.ctx.strokeStyle = 'rgba(171,107,219,0.4)'; c2.ctx.lineWidth = 2;
+        c2.ctx.setLineDash([5, 4]);
+        c2.ctx.beginPath(); c2.ctx.moveTo(from.x, from.y); c2.ctx.lineTo(to.x, to.y); c2.ctx.stroke();
+        c2.ctx.setLineDash([]);
+    }
+
+    // 행렬 표시 갱신
+    const f = n => (n >= 0 ? ' ' : '') + n.toFixed(1);
+    document.getElementById('transPoint').innerHTML =
+        `[1  0 <span style="color:var(--accent)">${f(tx)}</span>] [${f(ptOrig.x)}]   [<span style="color:var(--vec-a)">${f(ptMoved.x)}</span>]<br>` +
+        `[0  1  0.0] [${f(ptOrig.y)}] = [<span style="color:var(--vec-a)">${f(ptOrig.y)}</span>]<br>` +
+        `[0  0  1.0] [ 1.0]   [ 1.0]`;
+    document.getElementById('transDir').innerHTML =
+        `[1  0 <span style="color:var(--accent)">${f(tx)}</span>] [${f(dirOrig.x)}]   [<span style="color:var(--vec-b)">${f(dirOrig.x)}</span>]<br>` +
+        `[0  1  0.0] [${f(dirOrig.y)}] = [<span style="color:var(--vec-b)">${f(dirOrig.y)}</span>]<br>` +
+        `[0  0  1.0] [ 0.0]   [ 0.0]`;
+}
+
+document.getElementById('txSlider').addEventListener('input', e => {
+    tx = parseFloat(e.target.value);
+    document.getElementById('txVal').textContent = tx.toFixed(1);
+    render2();
+});
+document.getElementById('btnResetTx').addEventListener('click', () => {
+    tx = 0; document.getElementById('txSlider').value = '0';
+    document.getElementById('txVal').textContent = '0.0';
+    render2();
+});
+
+/* ===== Init ===== */
+render1();
+render2();
+  </script>
+</body>
+</html>

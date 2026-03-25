@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 1 — 내적의 기하학 | MyAcademy</title>
+    <link rel="stylesheet" href="style.css">
+    <script>
+    MathJax = {
+        tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']] },
+        svg: { fontCache: 'global' }
+    };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+</head>
+<body>
+  <header class="header">
+    <button class="hamburger" id="hamburger" aria-label="메뉴"><span></span><span></span><span></span></button>
+    <div class="header-logo">MyAcademy<span class="subtitle">선형대수 × 그래픽스 × AI</span></div>
+    <button class="theme-toggle" id="themeToggle" aria-label="테마 전환"><span class="theme-toggle-icon"></span></button>
+  </header>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <nav class="sidebar" id="sidebar"></nav>
+
+  <main class="main-content">
+    <div class="content">
+      <div class="page-title">
+        <div class="tag tag-lesson">PHASE 1</div>
+        <h1>내적(Dot Product)의 기하학</h1>
+        <p class="page-desc">공식이 아니라 기하로 읽는다</p>
+      </div>
+
+      <!-- ────── 개념 도입 ────── -->
+      <section class="concept-intro">
+          <h2 id="what-is-dot">내적이 뭔데?</h2>
+          <p>
+              내적의 공식은 단순하다. 하지만 공식을 외우는 건 아무 의미가 없다.
+              내적은 <strong>"한 벡터가 다른 벡터 방향으로 얼마나 뻗어있는가"</strong>를 측정하는 도구다.
+          </p>
+          <p>
+              아래 시각화에서 벡터를 직접 움직이면, 이 문장이 숫자로 어떻게 번역되는지 보인다.
+              <span style="color:var(--vec-a);">노란 벡터($\vec{a}$)</span>와
+              <span style="color:var(--vec-b);">파란 벡터($\vec{b}$)</span>의 끝을 드래그해봐.
+          </p>
+          <div class="formula-box">
+              $$\vec{a} \cdot \vec{b} \;=\; |\vec{a}|\,|\vec{b}|\cos\theta \;=\; a_x b_x + a_y b_y$$
+              <p class="note">왼쪽은 기하학적 정의, 오른쪽은 계산 공식. 둘이 같다는 게 핵심.</p>
+          </div>
+      </section>
+
+      <!-- ────── 인터랙티브 영역 ────── -->
+      <section>
+          <h2 id="interactive">인터랙티브</h2>
+          <div class="interactive-section">
+              <div class="canvas-wrap">
+                  <canvas id="mainCanvas" width="600" height="600"></canvas>
+                  <div class="canvas-controls">
+                      <button class="btn" id="btnReset">리셋</button>
+                      <label><input type="checkbox" id="chkProj" checked> 투영 표시</label>
+                      <label><input type="checkbox" id="chkSnap"> 격자 스냅</label>
+                      <span class="hint-text">벡터 끝을 드래그하세요</span>
+                  </div>
+              </div>
+
+              <div class="math-panel">
+                  <h3>실시간 계산</h3>
+                  <div class="calc-group">
+                      <div class="label">벡터</div>
+                      <div class="calc-row" id="dispVec"></div>
+                  </div>
+                  <div class="calc-group">
+                      <div class="label">내적 (성분 공식)</div>
+                      <div class="calc-row" id="dispDot"></div>
+                  </div>
+                  <div class="calc-group">
+                      <div class="label">크기</div>
+                      <div class="calc-row" id="dispMag"></div>
+                  </div>
+                  <div class="calc-group">
+                      <div class="label">각도</div>
+                      <div class="calc-row" id="dispAng"></div>
+                  </div>
+                  <div class="calc-group">
+                      <div class="label">투영 길이</div>
+                      <div class="calc-row" id="dispProj"></div>
+                  </div>
+                  <div class="calc-group" style="margin-top:1.2rem;padding-top:1rem;border-top:1px solid var(--border);">
+                      <div class="label">판정</div>
+                      <div class="calc-row" id="dispSign" style="font-size:1.05rem;"></div>
+                  </div>
+              </div>
+          </div>
+      </section>
+
+      <!-- ────── 부호 규칙 ────── -->
+      <section class="sign-rules">
+          <h2 id="sign-rules">부호 판별 — 이것만 기억해</h2>
+          <div class="rule-cards">
+              <div class="rule-card pos">
+                  <div class="condition">a · b &gt; 0</div>
+                  <div class="meaning">같은 쪽 (예각)</div>
+                  <div class="usage">→ 유사도 높음<br>→ 조명이 밝다</div>
+              </div>
+              <div class="rule-card zero">
+                  <div class="condition">a · b = 0</div>
+                  <div class="meaning">직교 (수직)</div>
+                  <div class="usage">→ 완전 독립<br>→ 투영 없음</div>
+              </div>
+              <div class="rule-card neg">
+                  <div class="condition">a · b &lt; 0</div>
+                  <div class="meaning">반대 쪽 (둔각)</div>
+                  <div class="usage">→ 유사도 낮음<br>→ 뒷면이다</div>
+              </div>
+          </div>
+      </section>
+
+      <!-- ────── 어디에 쓰이나 ────── -->
+      <section>
+          <div class="callout">
+              <div class="callout-title">그래서 내적이 어디 쓰이는데?</div>
+              <p>
+                  <strong>Lambert 조명:</strong> 표면 법선 $\vec{n}$과 광원 방향 $\vec{L}$의 내적 = 밝기.
+                  내적이 음수면 빛이 뒤에서 오는 것 → 그림자. Phase 1 구현 과제에서 직접 짜볼 거다.
+              </p>
+              <p style="margin-bottom:0;">
+                  <strong>코사인 유사도:</strong> $\cos\theta = \dfrac{\vec{a}\cdot\vec{b}}{|\vec{a}|\,|\vec{b}|}$ —
+                  ML에서 두 벡터가 얼마나 "같은 방향"인지 재는 표준 도구.
+                  추천 시스템, 임베딩 비교, 검색 랭킹 전부 이것이다.
+              </p>
+          </div>
+      </section>
+
+      <!-- ────── 직접 해보기 ────── -->
+      <section class="exercises">
+          <h2 id="exercises">직접 해보기</h2>
+          <ol>
+              <li><strong>직교 만들기:</strong> 두 벡터를 수직으로 맞춰봐. 내적 = 0인 순간을 확인.</li>
+              <li><strong>부호 뒤집기:</strong> $\vec{b}$를 $\vec{a}$ 반대편으로 넘겨. 부호가 바뀌는 경계가 어디?</li>
+              <li><strong>크기 실험:</strong> $\vec{b}$를 길게 늘려봐. 투영 길이가 어떻게 변하는지.</li>
+              <li><strong>완전 정렬:</strong> 두 벡터를 같은 방향으로 정렬. cos θ = 1 확인.</li>
+          </ol>
+      </section>
+    </div>
+
+    <div class="page-nav" id="page-nav"></div>
+
+    <script>
+    var PAGE_ID = "p1_02";
+    var ON_THIS_PAGE = [
+      { id: "what-is-dot", label: "내적이 뭔데?" },
+      { id: "interactive", label: "인터랙티브" },
+      { id: "sign-rules", label: "부호 판별" },
+      { id: "exercises", label: "직접 해보기" }
+    ];
+    </script>
+    <script src="nav.js"></script>
+  </main>
+
+  <script src="canvas-lib.js"></script>
+  <script>
+// ===== State =====
+let vecA = { x: 3, y: 2 };
+let vecB = { x: -1, y: 3 };
+let showProj = true, snap = false;
+
+// ===== Canvas (라이브러리 사용) =====
+const lc = createCanvas('mainCanvas');
+
+// ===== Render =====
+function render() {
+    lc.clear();
+    lc.drawGrid();
+    if (showProj) {
+        // 긴 벡터를 짧은 벡터에 사영 → 교환법칙이 직관적으로 보임
+        if (mag(vecA) >= mag(vecB)) lc.drawProjection(vecB, vecA);
+        else lc.drawProjection(vecA, vecB);
+    }
+    lc.drawAngleArc(vecA, vecB);
+    lc.drawVector(vecA, lc.colors.vecA, 'a');
+    lc.drawVector(vecB, lc.colors.vecB, 'b');
+    lc.drawHandle(vecA, lc.colors.vecA, drag.isHovered('a'));
+    lc.drawHandle(vecB, lc.colors.vecB, drag.isHovered('b'));
+    updatePanel();
+}
+
+// ===== Drag =====
+const drag = lc.makeDraggable([
+    { id: 'a', get: () => vecA, set: v => { vecA = v; }, color: lc.colors.vecA },
+    { id: 'b', get: () => vecB, set: v => { vecB = v; }, color: lc.colors.vecB },
+], render, { snapGetter: () => snap });
+
+// ===== Math Panel =====
+function updatePanel() {
+    const d  = dot(vecA, vecB);
+    const la = mag(vecA), lb = mag(vecB);
+    const ct = (la > 1e-9 && lb > 1e-9) ? d / (la * lb) : 0;
+    const th = Math.acos(Math.max(-1, Math.min(1, ct))) * 180 / Math.PI;
+    // 투영: 긴 쪽을 짧은 쪽에 사영
+    const aIsLonger = la >= lb;
+    const projBase  = aIsLonger ? lb : la;
+    const pl = projBase > 1e-9 ? d / projBase : 0;
+
+    const sc = Math.abs(d) < 0.05 ? 'zero' : d > 0 ? 'positive' : 'negative';
+    const st = Math.abs(d) < 0.05 ? '직교 (≈0)' : d > 0 ? '같은 쪽 (+)' : '반대 쪽 (−)';
+    const f  = n => n.toFixed(2);
+    const f1 = n => n.toFixed(1);
+
+    document.getElementById('dispVec').innerHTML =
+        `<span class="va"><b><i>a</i></b> = (${f1(vecA.x)}, ${f1(vecA.y)})</span><br>` +
+        `<span class="vb"><b><i>b</i></b> = (${f1(vecB.x)}, ${f1(vecB.y)})</span>`;
+
+    document.getElementById('dispDot').innerHTML =
+        `<span class="va">${f1(vecA.x)}</span>·<span class="vb">${f1(vecB.x)}</span> + ` +
+        `<span class="va">${f1(vecA.y)}</span>·<span class="vb">${f1(vecB.y)}</span> = ` +
+        `<span class="vd ${sc}">${f(d)}</span>`;
+
+    document.getElementById('dispMag').innerHTML =
+        `<span class="va">|<b><i>a</i></b>| = ${f(la)}</span>&emsp;` +
+        `<span class="vb">|<b><i>b</i></b>| = ${f(lb)}</span>`;
+
+    document.getElementById('dispAng').innerHTML =
+        `cos θ = <span class="vd ${sc}">${ct.toFixed(3)}</span>` +
+        ` → <span class="vang">θ = ${f1(th)}°</span>`;
+
+    const tgtC = aIsLonger ? 'va' : 'vb', tgtL = aIsLonger ? 'a' : 'b';
+    const baseC = aIsLonger ? 'vb' : 'va', baseL = aIsLonger ? 'b' : 'a';
+    document.getElementById('dispProj').innerHTML =
+        `<span class="vproj">proj = ${f(pl)}</span>` +
+        `<span style="color:var(--text-secondary);font-size:0.82rem;margin-left:0.5rem;">(` +
+        `<span class="${tgtC}"><b><i>${tgtL}</i></b></span>의 ` +
+        `<span class="${baseC}"><b><i>${baseL}</i></b></span> 방향 성분)</span>`;
+
+    document.getElementById('dispSign').innerHTML =
+        `<span class="dot-indicator" style="background:var(--${sc})"></span>` +
+        `<span class="sign-badge ${sc}">${st}</span>`;
+}
+
+// ===== Controls =====
+document.getElementById('btnReset').addEventListener('click', () => {
+    vecA = { x: 3, y: 2 }; vecB = { x: -1, y: 3 }; render();
+});
+document.getElementById('chkProj').addEventListener('change', e => {
+    showProj = e.target.checked; render();
+});
+document.getElementById('chkSnap').addEventListener('change', e => {
+    snap = e.target.checked;
+});
+
+// ===== Init =====
+render();
+  </script>
+</body>
+</html>

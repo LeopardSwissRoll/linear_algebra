@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 1 — 외적의 기하학 | MyAcademy</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="common.css">
+    <script>
+    MathJax = {
+        tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']] },
+        svg: { fontCache: 'global' }
+    };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+    <style>
+        .orbit-controls {
+            display: flex; align-items: center; gap: 0.8rem;
+            margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-dim);
+            flex-wrap: wrap;
+        }
+        .orbit-controls input[type="range"] {
+            flex: 1; max-width: 260px; accent-color: var(--accent);
+        }
+        .info-3d {
+            display: flex; gap: 1rem; margin-top: 1rem;
+        }
+        .info-3d > div {
+            flex: 1; background: var(--surface); border: 1px solid var(--border);
+            border-radius: 10px; padding: 0.8rem 1rem; font-size: 0.88rem;
+        }
+        .info-3d .coord {
+            font-family: 'Cascadia Code', Consolas, monospace;
+            font-weight: 700; font-size: 1rem; margin-top: 0.3rem;
+        }
+        @media (max-width: 600px) { .info-3d { flex-direction: column; } }
+    </style>
+</head>
+<body>
+<div class="lesson">
+
+    <header class="lesson-header">
+        <div class="phase-badge">Phase 1</div>
+        <h1>외적(Cross Product)의 기하학</h1>
+        <p class="subtitle">두 벡터가 얼마나 "다른 방향"인가</p>
+    </header>
+
+    <!-- ────── 개념 도입 ────── -->
+    <section class="concept-intro">
+        <h2>내적의 쌍둥이, 그런데 전혀 다른</h2>
+        <p>
+            내적이 "얼마나 <em>같은</em> 방향인가"를 재는 도구였다면,
+            외적은 <strong>"얼마나 <em>다른</em> 방향인가"</strong>를 잰다.
+        </p>
+        <p>
+            결과도 다르다. 내적은 스칼라(숫자 하나)를 돌려주지만,
+            외적은 <strong>새로운 벡터</strong>를 돌려준다 — 두 벡터에 모두 수직인 방향,
+            크기는 두 벡터가 만드는 <strong>평행사변형의 넓이</strong>.
+        </p>
+        <div class="formula-box">
+            $$|\vec{a} \times \vec{b}| \;=\; |\vec{a}|\,|\vec{b}|\sin\theta \;=\; \text{평행사변형 넓이}$$
+            <p class="note">
+                2D에서는 z-성분만 남는다: $a_x b_y - a_y b_x$ (부호 있는 넓이)
+            </p>
+        </div>
+    </section>
+
+    <!-- ────── Interactive 1: 평행사변형 ────── -->
+    <section>
+        <h2>평행사변형 넓이 — 외적의 크기</h2>
+        <div class="interactive-section">
+            <div class="canvas-wrap">
+                <canvas id="cvsArea" width="600" height="600"></canvas>
+                <div class="canvas-controls">
+                    <button class="btn" id="btnReset1">리셋</button>
+                    <label><input type="checkbox" id="chkSnap1"> 격자 스냅</label>
+                    <span class="hint-text">벡터 끝을 드래그하세요</span>
+                </div>
+            </div>
+
+            <div class="math-panel">
+                <h3>실시간 계산</h3>
+                <div class="calc-group">
+                    <div class="label">벡터</div>
+                    <div class="calc-row" id="dispVec"></div>
+                </div>
+                <div class="calc-group">
+                    <div class="label">외적 (2D)</div>
+                    <div class="calc-row" id="dispCross"></div>
+                </div>
+                <div class="calc-group">
+                    <div class="label">넓이</div>
+                    <div class="calc-row" id="dispArea"></div>
+                </div>
+                <div class="calc-group">
+                    <div class="label">각도</div>
+                    <div class="calc-row" id="dispAngle"></div>
+                </div>
+                <div class="calc-group" style="margin-top:1.2rem;padding-top:1rem;border-top:1px solid var(--border);">
+                    <div class="label">와인딩</div>
+                    <div class="calc-row" id="dispWind" style="font-size:1.05rem;"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ────── 부호 규칙 ────── -->
+    <section>
+        <h2>부호 = 와인딩 방향</h2>
+        <p>외적의 부호는 $\vec{a}$에서 $\vec{b}$로의 <strong>회전 방향</strong>을 알려준다.</p>
+        <div class="rule-cards">
+            <div class="rule-card pos">
+                <div class="condition">a × b &gt; 0</div>
+                <div class="meaning">반시계 (CCW)</div>
+                <div class="usage">→ 앞면(front face)<br>→ 법선이 화면 밖으로</div>
+            </div>
+            <div class="rule-card zero">
+                <div class="condition">a × b = 0</div>
+                <div class="meaning">평행 (또는 반평행)</div>
+                <div class="usage">→ 넓이 = 0<br>→ 같은 직선 위</div>
+            </div>
+            <div class="rule-card neg">
+                <div class="condition">a × b &lt; 0</div>
+                <div class="meaning">시계 (CW)</div>
+                <div class="usage">→ 뒷면(back face)<br>→ 법선이 화면 안으로</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ────── 3D 해석 ────── -->
+    <section class="concept-intro">
+        <h2>3D에서는 — 법선 벡터</h2>
+        <p>
+            2D에서 외적은 숫자 하나(부호 있는 넓이)를 줬다.
+            3D에서는 <strong>벡터</strong>를 준다 — 두 벡터가 만드는 평면에 <em>수직인</em> 방향이다.
+            이것을 <strong>법선 벡터(normal vector)</strong>라고 부른다.
+        </p>
+        <p>
+            아래에서 궤도를 돌려보면, $\vec{a}$와 $\vec{b}$가 만드는 평면(바닥)에서
+            외적 $\vec{c}$가 수직으로 솟아오르는 것을 볼 수 있다.
+        </p>
+    </section>
+
+    <!-- ────── Interactive 2: 3D 법선 ────── -->
+    <section>
+        <h2>3D 시각화</h2>
+        <div class="canvas-wrap">
+            <canvas id="cvs3D" width="600" height="420"></canvas>
+            <div class="orbit-controls">
+                <span>궤도</span>
+                <input type="range" id="orbitSlider" min="0" max="6.28" step="0.03" value="0.6">
+                <label><input type="checkbox" id="chkAutoOrbit"> 자동 회전</label>
+                <button class="btn" id="btnResetOrbit">기본 각도</button>
+            </div>
+            <div class="info-3d">
+                <div>
+                    <span style="color:var(--vec-a);">a</span> × <span style="color:var(--vec-b);">b</span> =
+                    <div class="coord" id="disp3DVec" style="color:var(--accent);"></div>
+                </div>
+                <div>
+                    <span style="color:var(--text-dim);">크기 (넓이)</span>
+                    <div class="coord" id="disp3DMag"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ────── 좌표계 규약 ────── -->
+    <section>
+        <div class="callout warn">
+            <div class="callout-title">오른손 법칙 — 그리고 DirectX는 왼손</div>
+            <p>
+                오른손의 네 손가락을 $\vec{a}$에서 $\vec{b}$ 쪽으로 감아쥐면,
+                엄지가 가리키는 방향이 $\vec{a} \times \vec{b}$의 방향이다.
+            </p>
+            <p style="margin-bottom:0;">
+                <strong>주의:</strong> OpenGL은 오른손 좌표계, <strong>DirectX는 왼손 좌표계</strong>를 쓴다.
+                왼손 좌표계에서는 와인딩 규약이 뒤집히므로, 앞면을 CW로 정의한다.
+                Phase 3에서 다시 만날 내용이다.
+            </p>
+        </div>
+    </section>
+
+    <!-- ────── 3D 전용 도구 ────── -->
+    <section>
+        <div class="callout">
+            <div class="callout-title">외적은 3차원 전용 도구다</div>
+            <p style="margin-bottom:0;">
+                "두 벡터에 수직인 벡터"라는 개념은 <strong>3D에서만</strong> 유일하게 정의된다.
+                2D에서는 수직 방향이 하나뿐이라 스칼라로 충분하고,
+                4D 이상에서는 수직 방향이 여러 개라 외적이 성립하지 않는다.
+                일반 선형대수의 중심은 내적·정사영·기저·직교성이고, 외적은 3D 기하학/그래픽스의 전용 무기다.
+            </p>
+        </div>
+    </section>
+
+    <!-- ────── 실전 연결 ────── -->
+    <section>
+        <div class="callout good">
+            <div class="callout-title">그래서 외적이 어디 쓰이는데?</div>
+            <p>
+                <strong>삼각형 법선 계산:</strong> 세 꼭짓점 A, B, C → 변 벡터 (B−A)×(C−A) = 표면 법선.
+                모든 3D 렌더러가 조명 계산에 이것을 쓴다. Phase 1 과제 1-3에서 직접 짠다.
+            </p>
+            <p style="margin-bottom:0;">
+                <strong>뒷면 판별:</strong> 삼각형의 와인딩 순서(CW/CCW)를 외적의 부호로 판별 →
+                카메라를 등지는 삼각형을 그리지 않는 back-face culling의 핵심이다.
+            </p>
+        </div>
+    </section>
+
+    <!-- ────── 직접 해보기 ────── -->
+    <section class="exercises">
+        <h2>직접 해보기</h2>
+        <ol>
+            <li><strong>넓이 = 0:</strong> 두 벡터를 평행하게 만들어봐. 평행사변형이 찌그러지면서 넓이가 0이 되는 걸 확인.</li>
+            <li><strong>최대 넓이:</strong> 같은 크기의 두 벡터로 넓이를 최대로 만들어봐. 어떤 각도일 때? (sin θ를 생각해봐.)</li>
+            <li><strong>와인딩 뒤집기:</strong> $\vec{b}$를 $\vec{a}$의 반대편으로 넘겨봐. 부호가 뒤집히고 색이 바뀌는 걸 확인.</li>
+            <li><strong>3D 궤도:</strong> 궤도 슬라이더를 돌려서 법선 벡터가 정말로 바닥 평면에 수직인지 확인.</li>
+        </ol>
+    </section>
+
+    <footer class="lesson-footer">
+        <a href="phase1_dot_product.html">← 1.2 내적의 기하학</a>
+        <a href="phase1_basis.html">1.4 기저와 좌표계 →</a>
+    </footer>
+</div>
+
+<!-- ====================================================================== -->
+<script src="canvas-lib.js"></script>
+<script>
+// ===== 공유 상태 =====
+let vecA = { x: 3, y: 1 };
+let vecB = { x: 1, y: 3 };
+let snap1 = false;
+
+function crossVal() { return vecA.x * vecB.y - vecA.y * vecB.x; }
+
+/* ================================================================
+   Canvas 1 — 2D 평행사변형
+   ================================================================ */
+const c1 = createCanvas('cvsArea');
+
+function drawParallelogram() {
+    const ctx = c1.ctx;
+    const o  = c1.toS({x:0,y:0});
+    const tA = c1.toS(vecA);
+    const tB = c1.toS(vecB);
+    const tAB= c1.toS(vadd(vecA, vecB));
+    const cv = crossVal();
+
+    // 면 채우기
+    const posCol = 'rgba(131,193,103,';
+    const negCol = 'rgba(252,98,85,';
+    const zerCol = 'rgba(232,200,64,';
+    const base = Math.abs(cv) < 0.1 ? zerCol : cv > 0 ? posCol : negCol;
+
+    ctx.fillStyle   = base + '0.12)';
+    ctx.strokeStyle = base + '0.35)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(o.x, o.y);
+    ctx.lineTo(tA.x, tA.y);
+    ctx.lineTo(tAB.x, tAB.y);
+    ctx.lineTo(tB.x, tB.y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // 대각선 점선 (a+b)
+    ctx.strokeStyle = 'rgba(200,200,220,0.15)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.moveTo(tA.x, tA.y); ctx.lineTo(tB.x, tB.y); ctx.stroke();
+    ctx.setLineDash([]);
+}
+
+function render1() {
+    c1.clear();
+    c1.drawGrid();
+    drawParallelogram();
+    c1.drawAngleArc(vecA, vecB);
+    c1.drawVector(vecA, c1.colors.vecA, 'a');
+    c1.drawVector(vecB, c1.colors.vecB, 'b');
+    c1.drawHandle(vecA, c1.colors.vecA, drag1.isHovered('a'));
+    c1.drawHandle(vecB, c1.colors.vecB, drag1.isHovered('b'));
+    updatePanel1();
+    render3D(); // 3D 캔버스도 동기 갱신
+}
+
+const drag1 = c1.makeDraggable([
+    { id: 'a', get: () => vecA, set: v => { vecA = v; }, color: c1.colors.vecA },
+    { id: 'b', get: () => vecB, set: v => { vecB = v; }, color: c1.colors.vecB },
+], render1, { snapGetter: () => snap1 });
+
+function updatePanel1() {
+    const cv = crossVal();
+    const la = mag(vecA), lb = mag(vecB);
+    const area = Math.abs(cv);
+    const ct = (la > 1e-9 && lb > 1e-9) ? cv / (la * lb) : 0;
+    const theta = Math.asin(Math.max(-1, Math.min(1, ct)));
+    const thetaDeg = Math.abs(theta) * 180 / Math.PI;
+
+    const sc = Math.abs(cv) < 0.1 ? 'zero' : cv > 0 ? 'positive' : 'negative';
+    const wt = Math.abs(cv) < 0.1 ? '평행 (≈0)' : cv > 0 ? 'CCW (+)' : 'CW (−)';
+    const f = n => n.toFixed(2);
+    const f1 = n => n.toFixed(1);
+
+    document.getElementById('dispVec').innerHTML =
+        `<span class="va"><b><i>a</i></b> = (${f1(vecA.x)}, ${f1(vecA.y)})</span><br>` +
+        `<span class="vb"><b><i>b</i></b> = (${f1(vecB.x)}, ${f1(vecB.y)})</span>`;
+
+    document.getElementById('dispCross').innerHTML =
+        `<span class="va">${f1(vecA.x)}</span>·<span class="vb">${f1(vecB.y)}</span> − ` +
+        `<span class="va">${f1(vecA.y)}</span>·<span class="vb">${f1(vecB.x)}</span> = ` +
+        `<span class="vd ${sc}">${f(cv)}</span>`;
+
+    document.getElementById('dispArea').innerHTML =
+        `<span class="vd ${sc}">넓이 = ${f(area)}</span>` +
+        `<span style="color:var(--text-dim);font-size:0.82rem;margin-left:0.5rem;">(평행사변형)</span>`;
+
+    const dotAB = dot(vecA, vecB);
+    const cosT = (la > 1e-9 && lb > 1e-9) ? dotAB / (la * lb) : 1;
+    const angleDeg = Math.acos(Math.max(-1, Math.min(1, cosT))) * 180 / Math.PI;
+    document.getElementById('dispAngle').innerHTML =
+        `sin θ = <span class="vd ${sc}">${(la > 1e-9 && lb > 1e-9 ? cv / (la*lb) : 0).toFixed(3)}</span>` +
+        ` → <span class="vang">θ = ${f1(angleDeg)}°</span>`;
+
+    document.getElementById('dispWind').innerHTML =
+        `<span class="dot-indicator" style="background:var(--${sc})"></span>` +
+        `<span class="sign-badge ${sc}">${wt}</span>`;
+}
+
+/* ================================================================
+   Canvas 2 — 3D 법선 벡터
+   ================================================================ */
+const c2 = createCanvas('cvs3D', { width: 600, height: 420, unit: 42 });
+let orbitAngle = 0.6;
+let autoOrbit = false;
+let animId = null;
+const ELEV = 0.55;
+
+function proj3D(v) {
+    const ca = Math.cos(orbitAngle), sa = Math.sin(orbitAngle);
+    const rx =  v.x * ca + v.z * sa;
+    const rz = -v.x * sa + v.z * ca;
+    const ce = Math.cos(ELEV), se = Math.sin(ELEV);
+    const fy = v.y * ce - rz * se;
+    const fz = v.y * se + rz * ce;
+    return { x: rx, y: fz };
+}
+
+function toS3(v3) { return c2.toS(proj3D(v3)); }
+
+function draw3DLine(a, b, color, width, dash) {
+    const sa = toS3(a), sb = toS3(b);
+    const ctx = c2.ctx;
+    ctx.strokeStyle = color; ctx.lineWidth = width || 1;
+    if (dash) ctx.setLineDash(dash);
+    ctx.beginPath(); ctx.moveTo(sa.x, sa.y); ctx.lineTo(sb.x, sb.y); ctx.stroke();
+    if (dash) ctx.setLineDash([]);
+}
+
+function draw3DArrow(from, to, color, label, lineW) {
+    const sf = toS3(from), st = toS3(to);
+    const len = dist(sf, st);
+    if (len < 3) return;
+    const ctx = c2.ctx;
+
+    ctx.save();
+    ctx.shadowColor = color; ctx.shadowBlur = 8;
+    ctx.strokeStyle = color; ctx.lineWidth = lineW || 3; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(sf.x, sf.y); ctx.lineTo(st.x, st.y); ctx.stroke();
+    c2.arrowhead(sf.x, sf.y, st.x, st.y, color);
+    ctx.restore();
+
+    if (label) {
+        const d = { x: (st.x - sf.x) / len, y: (st.y - sf.y) / len };
+        ctx.fillStyle = color;
+        ctx.font = 'bold italic 16px serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(label, st.x + d.x * 18, st.y + d.y * 18);
+    }
+}
+
+// 직각 표시 — 바닥 평면과 외적 벡터 사이
+function drawRightAngle3D(baseDir, upDir, origin) {
+    const sz = 0.5;
+    const p1 = { x: origin.x + baseDir.x * sz, y: origin.y + baseDir.y * sz, z: origin.z + baseDir.z * sz };
+    const p2 = { x: p1.x + upDir.x * sz, y: p1.y + upDir.y * sz, z: p1.z + upDir.z * sz };
+    const p3 = { x: origin.x + upDir.x * sz, y: origin.y + upDir.y * sz, z: origin.z + upDir.z * sz };
+
+    const s1 = toS3(p1), s2 = toS3(p2), s3 = toS3(p3);
+    const ctx = c2.ctx;
+    ctx.strokeStyle = 'rgba(171,107,219,0.5)'; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(s1.x, s1.y); ctx.lineTo(s2.x, s2.y); ctx.lineTo(s3.x, s3.y);
+    ctx.stroke();
+}
+
+function render3D() {
+    c2.clear();
+    const ctx = c2.ctx;
+    const cv = crossVal();
+
+    // ── 바닥 격자 ──
+    for (let i = -4; i <= 4; i++) {
+        const alpha = i === 0 ? 0.25 : 0.1;
+        const c = `rgba(60,60,110,${alpha})`;
+        draw3DLine({x:-4,y:i,z:0},{x:4,y:i,z:0}, c);
+        draw3DLine({x:i,y:-4,z:0},{x:i,y:4,z:0}, c);
+    }
+
+    // ── 축 (화살표) ──
+    draw3DArrow({x:0,y:0,z:0},{x:4.5,y:0,z:0},'rgba(200,130,130,0.5)','', 1.5);
+    draw3DArrow({x:0,y:0,z:0},{x:0,y:4.5,z:0},'rgba(130,200,130,0.5)','', 1.5);
+    draw3DArrow({x:0,y:0,z:0},{x:0,y:0,z:4.5},'rgba(130,170,220,0.5)','', 1.5);
+
+    ctx.font = 'bold 13px Consolas, monospace';
+    let s;
+    s = toS3({x:5,y:0,z:0}); ctx.fillStyle='rgba(200,130,130,0.7)'; ctx.textAlign='center'; ctx.fillText('x',s.x,s.y);
+    s = toS3({x:0,y:5,z:0}); ctx.fillStyle='rgba(130,200,130,0.7)'; ctx.fillText('y',s.x,s.y);
+    s = toS3({x:0,y:0,z:5}); ctx.fillStyle='rgba(130,170,220,0.7)'; ctx.fillText('z (up)',s.x,s.y);
+
+    // ── 벡터 ──
+    const a3 = { x: vecA.x, y: vecA.y, z: 0 };
+    const b3 = { x: vecB.x, y: vecB.y, z: 0 };
+
+    // 외적 벡터: 적절한 스케일 (최대 길이 4)
+    const maxLen = 4;
+    const cLen = Math.min(Math.abs(cv), maxLen);
+    const cSign = cv >= 0 ? 1 : -1;
+    const c3 = { x: 0, y: 0, z: cLen * cSign };
+
+    // 평행사변형 (바닥) — 더 선명하게
+    const o = toS3({x:0,y:0,z:0});
+    const pA = toS3(a3);
+    const pB = toS3(b3);
+    const pAB = toS3({x:a3.x+b3.x, y:a3.y+b3.y, z:0});
+
+    const posCol = cv > 0;
+    const fillBase = posCol ? '131,193,103' : Math.abs(cv) < 0.1 ? '200,200,200' : '252,98,85';
+    ctx.fillStyle = `rgba(${fillBase},0.18)`;
+    ctx.strokeStyle = `rgba(${fillBase},0.5)`;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(o.x,o.y); ctx.lineTo(pA.x,pA.y);
+    ctx.lineTo(pAB.x,pAB.y); ctx.lineTo(pB.x,pB.y);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+
+    // 벡터 a, b
+    draw3DArrow({x:0,y:0,z:0}, a3, c2.colors.vecA, 'a');
+    draw3DArrow({x:0,y:0,z:0}, b3, c2.colors.vecB, 'b');
+
+    // 외적 벡터 c
+    if (Math.abs(cv) > 0.2) {
+        const cColor = cv > 0 ? c2.colors.positive : c2.colors.negative;
+
+        // 점선 기둥 — c 끝에서 바닥까지
+        draw3DLine(c3, {x:0,y:0,z:0}, cColor + '33', 1, [4,4]);
+
+        // 외적 화살표
+        draw3DArrow({x:0,y:0,z:0}, c3, cColor, 'c', 3.5);
+
+        // 직각 표시 (a 방향과 c 방향 사이)
+        const aNorm = mag(vecA) > 1e-9 ? norm(vecA) : { x: 1, y: 0 };
+        drawRightAngle3D(
+            { x: aNorm.x, y: aNorm.y, z: 0 },
+            { x: 0, y: 0, z: cSign },
+            { x: 0, y: 0, z: 0 }
+        );
+    }
+
+    // 원점
+    ctx.beginPath(); ctx.arc(o.x, o.y, 3, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(200,200,220,0.4)'; ctx.fill();
+
+    // ── 하단 정보 갱신 ──
+    const f = n => n.toFixed(1);
+    document.getElementById('disp3DVec').textContent = `(0, 0, ${f(cv)})`;
+    document.getElementById('disp3DMag').innerHTML =
+        `<span style="color:${Math.abs(cv)<0.1?'var(--zero)':cv>0?'var(--positive)':'var(--negative)'}">${Math.abs(cv).toFixed(2)}</span>`;
+}
+
+// ── 자동 회전 ──
+function animateOrbit() {
+    if (!autoOrbit) return;
+    orbitAngle += 0.012;
+    if (orbitAngle > Math.PI * 2) orbitAngle -= Math.PI * 2;
+    document.getElementById('orbitSlider').value = orbitAngle.toFixed(2);
+    render3D();
+    animId = requestAnimationFrame(animateOrbit);
+}
+
+
+// ===== Controls =====
+document.getElementById('btnReset1').addEventListener('click', () => {
+    vecA = { x: 3, y: 1 }; vecB = { x: 1, y: 3 }; render1();
+});
+document.getElementById('chkSnap1').addEventListener('change', e => { snap1 = e.target.checked; });
+
+document.getElementById('orbitSlider').addEventListener('input', e => {
+    orbitAngle = parseFloat(e.target.value);
+    if (!autoOrbit) render3D();
+});
+document.getElementById('chkAutoOrbit').addEventListener('change', e => {
+    autoOrbit = e.target.checked;
+    if (autoOrbit) animateOrbit();
+    else if (animId) { cancelAnimationFrame(animId); animId = null; }
+});
+document.getElementById('btnResetOrbit').addEventListener('click', () => {
+    orbitAngle = 0.6;
+    document.getElementById('orbitSlider').value = '0.6';
+    if (!autoOrbit) render3D();
+});
+
+// ===== Init =====
+render1();
+</script>
+</body>
+</html>

@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 1 — 벡터의 이중 정체성 | MyAcademy</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="common.css">
+    <script>
+    MathJax = {
+        tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']] },
+        svg: { fontCache: 'global' }
+    };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+    <style>
+        .dual-readout {
+            display: flex; gap: 1rem; margin-top: 1rem;
+        }
+        .dual-readout > div {
+            flex: 1;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1rem 1.2rem;
+        }
+        .dual-readout h4 {
+            font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem;
+        }
+        .dual-readout .coord {
+            font-family: 'Cascadia Code', Consolas, monospace;
+            font-size: 1.05rem; font-weight: 700; margin-bottom: 0.3rem;
+        }
+        .dual-readout .desc {
+            font-size: 0.82rem; color: var(--text-dim);
+        }
+        .trans-readout {
+            display: flex; gap: 1rem; margin-top: 1rem;
+        }
+        .trans-readout > div {
+            flex: 1;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1rem 1.2rem;
+            transition: border-color 0.3s;
+        }
+        .trans-readout > div.changing {
+            border-color: rgba(232, 200, 64, 0.4);
+        }
+        .trans-readout > div.stable {
+            border-color: rgba(131, 193, 103, 0.3);
+        }
+        .trans-readout h4 {
+            font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem;
+        }
+        .trans-readout .coord {
+            font-family: 'Cascadia Code', Consolas, monospace;
+            font-size: 1.05rem; font-weight: 700; margin-bottom: 0.3rem;
+        }
+        .trans-readout .note {
+            font-size: 0.8rem; font-weight: 600; margin-top: 0.3rem;
+        }
+        .note-change { color: var(--vec-a); }
+        .note-stable { color: var(--positive); }
+        @media (max-width: 600px) {
+            .dual-readout, .trans-readout { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+<div class="lesson">
+
+    <header class="lesson-header">
+        <div class="phase-badge">Phase 1</div>
+        <h1>벡터의 이중 정체성</h1>
+        <p class="subtitle">같은 숫자, 다른 의미</p>
+    </header>
+
+    <!-- ────── 개념 도입 ────── -->
+    <section class="concept-intro">
+        <h2>(3, 2)는 뭘까?</h2>
+        <p>
+            숫자 쌍 $(3, 2)$를 보자. 이건 두 가지로 읽을 수 있다.
+        </p>
+        <p>
+            <strong>위치(Point)</strong> — 공간에서 $(3, 2)$ 좌표에 있는 <em>점</em>.<br>
+            <strong>방향(Direction)</strong> — 원점에서 $(3, 2)$으로 향하는 <em>화살표</em>.
+        </p>
+        <p>
+            데이터는 같다. 하지만 의미가 다르고, 다르게 행동한다.
+            아래에서 직접 움직여보면 무슨 말인지 보인다.
+        </p>
+    </section>
+
+    <!-- ────── Interactive 1: 두 얼굴 ────── -->
+    <section>
+        <h2>두 얼굴 — 같은 데이터, 다른 시각화</h2>
+        <div class="canvas-wrap">
+            <canvas id="cvsDual" width="560" height="400"></canvas>
+            <span class="hint-text">끝점을 드래그하세요</span>
+        </div>
+        <div class="dual-readout">
+            <div>
+                <h4 style="color:var(--vec-a);">위치(Point) 해석</h4>
+                <div class="coord" id="dualPos" style="color:var(--vec-a);"></div>
+                <div class="desc">공간의 한 <em>점</em>. 좌표축에서 값을 읽어낸다.</div>
+            </div>
+            <div>
+                <h4 style="color:var(--vec-b);">방향(Direction) 해석</h4>
+                <div class="coord" id="dualDir" style="color:var(--vec-b);"></div>
+                <div class="desc">원점에서 뻗어나가는 <em>화살표</em>. 방향과 크기를 가진다.</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ────── 이동 테스트 도입 ────── -->
+    <section class="concept-intro">
+        <h2>이동하면 진짜 차이가 드러난다</h2>
+        <p>
+            두 해석이 진짜 다르다는 걸 보려면, <strong>원점을 옮겨보면</strong> 된다.
+        </p>
+        <p>
+            위치(점)는 "어디에 있는가"이기 때문에, 기준점이 바뀌면 좌표가 바뀐다.<br>
+            방향(화살표)은 "어디를 가리키는가"이기 때문에, 기준점을 옮겨도 좌표가 안 바뀐다.
+        </p>
+        <p>
+            아래에서 <span style="color:var(--accent);">보라색 원점 O'</span>를 드래그해봐.
+        </p>
+    </section>
+
+    <!-- ────── Interactive 2: 이동 테스트 ────── -->
+    <section>
+        <h2>이동 테스트</h2>
+        <div class="canvas-wrap">
+            <canvas id="cvsTrans" width="560" height="400"></canvas>
+            <div class="canvas-controls">
+                <button class="btn" id="btnResetTrans">원점 리셋</button>
+                <span class="hint-text">보라색 O'를 드래그하세요</span>
+            </div>
+        </div>
+        <div class="trans-readout">
+            <div class="changing" id="transPointBox">
+                <h4 style="color:var(--vec-a);">위치 P (O' 기준)</h4>
+                <div class="coord" id="transPointCoord" style="color:var(--vec-a);"></div>
+                <div class="note note-change" id="transPointNote">← 원점이 바뀌면 좌표도 바뀐다</div>
+            </div>
+            <div class="stable" id="transDirBox">
+                <h4 style="color:var(--vec-b);">방향 d (O' 기준)</h4>
+                <div class="coord" id="transDirCoord" style="color:var(--vec-b);"></div>
+                <div class="note note-stable">← 원점이 바뀌어도 좌표는 그대로</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ────── 연산 규칙 ────── -->
+    <section>
+        <h2>타입이 다르면 연산의 의미도 다르다</h2>
+        <p>위치와 방향을 구분하면, 벡터 연산이 "의미"를 갖게 된다.</p>
+        <div class="info-cards">
+            <div class="info-card">
+                <h4>위치 − 위치 = 방향</h4>
+                <p>두 점 사이의 변위.<br>$B - A$ = "A에서 B로의 화살표"</p>
+            </div>
+            <div class="info-card">
+                <h4>위치 + 방향 = 위치</h4>
+                <p>점을 이동시킨다.<br>$A + \vec{d}$ = "A를 d만큼 옮긴 점"</p>
+            </div>
+            <div class="info-card">
+                <h4>방향 + 방향 = 방향</h4>
+                <p>이동의 합성.<br>$\vec{d_1} + \vec{d_2}$ = "두 이동을 합친 이동"</p>
+            </div>
+            <div class="info-card" style="border-color: rgba(252,98,85,0.3);">
+                <h4 style="color:var(--negative);">위치 + 위치 = ???</h4>
+                <p>수학적으로 정의되지 않음.<br>나중에: 가중 평균(아핀 결합)으로 의미 부여</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ────── Phase 3 예고 ────── -->
+    <section>
+        <div class="callout">
+            <div class="callout-title">Phase 3 예고 — 동차 좌표</div>
+            <p>
+                이 구분은 나중에 동차 좌표(Homogeneous Coordinates)에서 정확히 공식화된다.
+            </p>
+            <p style="margin-bottom:0;">
+                위치 = $(x,\; y,\; z,\; \mathbf{1})$ — $w = 1$<br>
+                방향 = $(x,\; y,\; z,\; \mathbf{0})$ — $w = 0$<br>
+                이동 행렬을 곱하면 $w=1$인 벡터만 영향을 받고, $w=0$은 그대로다.
+                바로 위에서 본 현상의 수학적 표현이다.
+            </p>
+        </div>
+    </section>
+
+    <!-- ────── 직접 해보기 ────── -->
+    <section class="exercises">
+        <h2>직접 해보기</h2>
+        <ol>
+            <li><strong>두 얼굴:</strong> (0, 0)으로 드래그해봐. 위치와 방향 모두 "아무것도 없음"이 되는가?</li>
+            <li><strong>이동 테스트:</strong> O'를 P와 같은 위치로 옮겨봐. P의 좌표가 (0, 0)이 되는 것을 확인.</li>
+            <li><strong>방향 불변:</strong> O'를 아무리 움직여도 $\vec{d}$의 좌표가 안 바뀌는 것을 확인.</li>
+            <li><strong>연산 체크:</strong> 위 캔버스에서, P의 좌표(O' 기준)는 $P - O'$와 같은지 계산해봐.</li>
+        </ol>
+    </section>
+
+    <footer class="lesson-footer">
+        <a href="#">← 커리큘럼 목록</a>
+        <a href="phase1_dot_product.html">1.2 내적의 기하학 →</a>
+    </footer>
+</div>
+
+<!-- ====================================================================== -->
+<script src="canvas-lib.js"></script>
+<script>
+/* ================================================================
+   Canvas 1 — 두 얼굴: 같은 데이터를 점과 화살표로 동시에 보여줌
+   ================================================================ */
+const c1 = createCanvas('cvsDual', { width: 560, height: 400 });
+let dualVec = { x: 3, y: 2 };
+
+function drawCoordLines(c, v) {
+    const ctx = c.ctx;
+    const s = c.toS(v);
+    const xProj = c.toS({ x: v.x, y: 0 });
+    const yProj = c.toS({ x: 0, y: v.y });
+
+    ctx.strokeStyle = c.colors.vecA + '44';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(xProj.x, xProj.y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(yProj.x, yProj.y); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // 축 위 좌표값 표시
+    ctx.fillStyle = c.colors.vecA;
+    ctx.font = 'bold 12px Consolas, monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText(v.x.toFixed(1), xProj.x, xProj.y + 6);
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillText(v.y.toFixed(1), yProj.x - 8, yProj.y);
+}
+
+function renderDual() {
+    c1.clear();
+    c1.drawGrid();
+
+    // 좌표 읽기 선 (위치 해석)
+    drawCoordLines(c1, dualVec);
+
+    // 방향 화살표 (파랑)
+    c1.drawVector(dualVec, c1.colors.vecB, 'd');
+
+    // 위치 점 (골드) — 화살표 끝과 겹침
+    c1.drawPoint(dualVec, c1.colors.vecA, 'P');
+
+    // 드래그 핸들
+    c1.drawHandle(dualVec, '#ffffff', dragDual.isHovered('v'));
+
+    // 하단 패널 갱신
+    const f = n => n.toFixed(1);
+    document.getElementById('dualPos').textContent = `P = (${f(dualVec.x)}, ${f(dualVec.y)})`;
+    document.getElementById('dualDir').textContent = `d = (${f(dualVec.x)}, ${f(dualVec.y)})`;
+}
+
+const dragDual = c1.makeDraggable([
+    { id: 'v', get: () => dualVec, set: v => { dualVec = v; }, color: '#ffffff' }
+], renderDual, { clamp: 4.8 });
+
+
+/* ================================================================
+   Canvas 2 — 이동 테스트: 원점을 옮기면 점 좌표만 바뀜
+   ================================================================ */
+const c2 = createCanvas('cvsTrans', { width: 560, height: 400 });
+
+const pointP = { x: 3, y: 2 };   // 세계 좌표 고정
+const dirD   = { x: 2, y: 1 };   // 방향 고정
+let origin2  = { x: 0, y: 0 };   // 드래그 가능한 원점
+
+function drawOriginCross(c, pos) {
+    const s = c.toS(pos);
+    const ctx = c.ctx;
+    const len = 18;
+
+    ctx.save();
+    ctx.strokeStyle = c.colors.accent;
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    // 십자
+    ctx.beginPath(); ctx.moveTo(s.x - len, s.y); ctx.lineTo(s.x + len, s.y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(s.x, s.y - len); ctx.lineTo(s.x, s.y + len); ctx.stroke();
+    // 라벨
+    ctx.fillStyle = c.colors.accent;
+    ctx.font = "bold 14px 'Noto Sans KR', sans-serif";
+    ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.fillText("O'", s.x + 10, s.y - 8);
+    ctx.restore();
+}
+
+function renderTrans() {
+    c2.clear();
+    c2.drawGrid();
+
+    // 원점 O' 십자
+    drawOriginCross(c2, origin2);
+
+    // O'에서 P까지 — 상대 위치 벡터 (점선 골드)
+    const relP = vsub(pointP, origin2);
+    c2.drawVectorFrom(origin2, pointP, c2.colors.vecA + 'aa', '');
+    // 위치 벡터 위에 점선 오버레이
+    const ctx2 = c2.ctx;
+    const oS = c2.toS(origin2), pS = c2.toS(pointP);
+    ctx2.strokeStyle = c2.colors.vecA + '55';
+    ctx2.lineWidth = 2;
+    ctx2.setLineDash([6, 4]);
+    ctx2.beginPath(); ctx2.moveTo(oS.x, oS.y); ctx2.lineTo(pS.x, pS.y); ctx2.stroke();
+    ctx2.setLineDash([]);
+
+    // 방향 화살표 — O'에서 출발, d 방향으로
+    const dEnd = vadd(origin2, dirD);
+    c2.drawVectorFrom(origin2, dEnd, c2.colors.vecB, 'd');
+
+    // 위치 점
+    c2.drawPoint(pointP, c2.colors.vecA, 'P');
+
+    // O' 핸들
+    c2.drawHandle(origin2, c2.colors.accent, dragTrans.isHovered('o'));
+
+    // 하단 패널 갱신
+    const f = n => n.toFixed(1);
+    const isOriginMoved = mag(origin2) > 0.2;
+
+    document.getElementById('transPointCoord').textContent =
+        `P − O' = (${f(relP.x)}, ${f(relP.y)})`;
+    document.getElementById('transDirCoord').textContent =
+        `d = (${f(dirD.x)}, ${f(dirD.y)})`;
+
+    const pointBox = document.getElementById('transPointBox');
+    const noteEl = document.getElementById('transPointNote');
+    if (isOriginMoved) {
+        pointBox.classList.add('changing');
+        noteEl.textContent = `← 좌표가 바뀌었다! 원래 (${f(pointP.x)}, ${f(pointP.y)})`;
+    } else {
+        pointBox.classList.remove('changing');
+        noteEl.textContent = '← 원점이 바뀌면 좌표도 바뀐다';
+    }
+}
+
+const dragTrans = c2.makeDraggable([
+    { id: 'o', get: () => origin2, set: v => { origin2 = v; }, color: c2.colors.accent }
+], renderTrans, { clamp: 4.5 });
+
+document.getElementById('btnResetTrans').addEventListener('click', () => {
+    origin2 = { x: 0, y: 0 };
+    renderTrans();
+});
+
+/* ===== Init ===== */
+renderDual();
+renderTrans();
+</script>
+</body>
+</html>

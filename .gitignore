@@ -1,0 +1,8 @@
+MDs/
+*.md
+!CLAUDE.md
+!curriculum/*.md
+!learning_methodology.md
+node_modules/
+.DS_Store
+Thumbs.db

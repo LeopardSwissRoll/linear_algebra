@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 2 — 기본 변환 갤러리 | MyAcademy</title>
+    <link rel="stylesheet" href="style.css">
+    <script>
+    MathJax = { tex: { inlineMath: [['$','$']], displayMath: [['$$','$$']] }, svg: { fontCache: 'global' } };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+    <style>
+        .t-slider-row { display:flex; align-items:center; gap:1rem; margin-top:0.75rem; font-size:0.9rem; }
+        .t-slider-row input[type="range"] { flex:1; max-width:260px; accent-color:var(--accent); }
+        .t-slider-row .t-val { font-family:var(--font-code); font-weight:700; color:var(--accent); min-width:3.5rem; }
+        .slider-label { min-width:2.5rem; font-weight:600; }
+        .preset-row { display:flex; gap:0.4rem; flex-wrap:wrap; margin-top:0.5rem; }
+        .pbtn { font-size:0.78rem; padding:0.25rem 0.6rem; background:var(--bg-surface); border:1px solid var(--border); border-radius:4px; cursor:pointer; color:var(--text-primary); font-family:inherit; transition:all 0.2s; }
+        .pbtn:hover, .pbtn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+        .cmp-table { width:100%; border-collapse:collapse; margin:1rem 0; font-size:0.9rem; }
+        .cmp-table th, .cmp-table td { padding:0.5rem 0.7rem; border:1px solid var(--border); text-align:center; }
+        .cmp-table th { background:rgba(171,107,219,0.08); color:var(--accent); font-weight:600; font-size:0.8rem; }
+        .cmp-table td:first-child { text-align:left; font-weight:600; color:var(--text-secondary); font-size:0.85rem; }
+        .det-display { text-align:center; font-family:var(--font-code); font-size:0.9rem; margin-top:0.5rem; }
+    </style>
+</head>
+<body>
+  <header class="header">
+    <button class="hamburger" id="hamburger" aria-label="메뉴"><span></span><span></span><span></span></button>
+    <div class="header-logo">MyAcademy<span class="subtitle">선형대수 × 그래픽스 × AI</span></div>
+    <button class="theme-toggle" id="themeToggle" aria-label="테마 전환"><span class="theme-toggle-icon"></span></button>
+  </header>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <nav class="sidebar" id="sidebar"></nav>
+
+  <main class="main-content">
+    <div class="content">
+      <div class="page-title">
+        <div class="tag tag-lesson">PHASE 2</div>
+        <h1>기본 변환 갤러리</h1>
+        <p class="page-desc">스케일·회전·반사·전단 — 행렬의 각 숫자가 기하학적으로 뭘 의미하는가</p>
+      </div>
+
+      <!-- ══════════════════════════════════════════ -->
+      <!--  1. 스케일                                   -->
+      <!-- ══════════════════════════════════════════ -->
+      <section>
+        <h2 id="scale">스케일 — 각 축을 늘리고 줄인다</h2>
+        <div class="formula-box">
+          $$S = \begin{bmatrix} s_x & 0 \\ 0 & s_y \end{bmatrix}$$
+          <p class="note">대각 행렬 → 축끼리 독립적. $e_1 \to (s_x, 0)$, $e_2 \to (0, s_y)$.</p>
+        </div>
+        <div class="interactive-section">
+          <div class="canvas-wrap">
+            <canvas id="cvsScale" width="600" height="600"></canvas>
+            <div class="t-slider-row">
+              <span class="slider-label">s<sub>x</sub></span>
+              <input type="range" id="sxSlider" min="-2" max="3" step="0.1" value="2">
+              <span class="t-val" id="sxVal">2.00</span>
+            </div>
+            <div class="t-slider-row">
+              <span class="slider-label">s<sub>y</sub></span>
+              <input type="range" id="sySlider" min="-2" max="3" step="0.1" value="1">
+              <span class="t-val" id="syVal">1.00</span>
+            </div>
+          </div>
+          <div class="math-panel">
+            <h3>스케일 행렬</h3>
+            <div class="calc-group">
+              <div class="label">행렬 S</div>
+              <div class="calc-row" id="scaleMatrix"></div>
+            </div>
+            <div class="calc-group">
+              <div class="label">1열 = e₁이 가는 곳</div>
+              <div class="calc-row" id="scaleCol1"></div>
+            </div>
+            <div class="calc-group">
+              <div class="label">2열 = e₂가 가는 곳</div>
+              <div class="calc-row" id="scaleCol2"></div>
+            </div>
+            <div class="det-display" id="scaleDet"></div>
+          </div>
+        </div>
+        <div class="callout">
+          <div class="callout-title">비균등 스케일과 법선</div>
+          <p style="margin-bottom:0;">$s_x \neq s_y$일 때, 원이 타원이 된다(캔버스에서 보라색 곡선 확인). 이런 비균등 스케일은 <strong>법선 벡터를 망가뜨린다</strong> — 표면을 x로 늘리면 법선은 x 방향으로 줄여야 수직이 유지된다. 이래서 법선에는 $(M^{-1})^T$를 적용해야 한다. (Phase 3)</p>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════ -->
+      <!--  2. 회전                                    -->
+      <!-- ══════════════════════════════════════════ -->
+      <section>
+        <h2 id="rotation">회전 — 형태를 보존하며 돌린다</h2>
+        <div class="formula-box">
+          $$R(\theta) = \begin{bmatrix} \cos\theta & -\sin\theta \\ \sin\theta & \cos\theta \end{bmatrix}$$
+          <p class="note">p2_02에서 유도 완료. 두 열이 직교 + 길이 1 → 직교 행렬. $R^{-1} = R^T$.</p>
+        </div>
+        <div class="interactive-section">
+          <div class="canvas-wrap">
+            <canvas id="cvsRot" width="600" height="600"></canvas>
+            <div class="t-slider-row">
+              <span class="slider-label">θ</span>
+              <input type="range" id="rotSlider" min="-180" max="180" step="1" value="45">
+              <span class="t-val" id="rotVal">45°</span>
+            </div>
+            <div class="preset-row">
+              <button class="pbtn" data-a="0">0°</button>
+              <button class="pbtn" data-a="30">30°</button>
+              <button class="pbtn active" data-a="45">45°</button>
+              <button class="pbtn" data-a="60">60°</button>
+              <button class="pbtn" data-a="90">90°</button>
+              <button class="pbtn" data-a="180">180°</button>
+            </div>
+          </div>
+          <div class="math-panel">
+            <h3>회전 행렬</h3>
+            <div class="calc-group">
+              <div class="label">행렬 R(θ)</div>
+              <div class="calc-row" id="rotMatrix"></div>
+            </div>
+            <div class="calc-group">
+              <div class="label">e₁ → 단위원 위</div>
+              <div class="calc-row" id="rotCol1"></div>
+            </div>
+            <div class="calc-group">
+              <div class="label">e₂ → e₁에서 90° 더</div>
+              <div class="calc-row" id="rotCol2"></div>
+            </div>
+            <div class="det-display" id="rotDet"></div>
+          </div>
+        </div>
+        <div class="callout">
+          <div class="callout-title">회전의 고유벡터는 실수 영역에 없다</div>
+          <p style="margin-bottom:0;">캔버스에서 아무 각도나 넣어봐 — 어떤 방향도 "제자리에 남지" 않는다. 모든 벡터가 돌아가니까. 고유벡터(방향이 안 바뀌는 벡터)가 실수 범위에 존재하지 않는다. 복소수 범위에서만 존재한다. (Phase 5)</p>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════ -->
+      <!--  3. 반사                                    -->
+      <!-- ══════════════════════════════════════════ -->
+      <section>
+        <h2 id="reflection">반사 — 거울에 비친다</h2>
+        <div class="formula-box">
+          <p style="font-weight:600;color:var(--text-primary);margin-bottom:0.5rem;">임의의 축 θ에 대한 반사:</p>
+          $$F(\theta) = \begin{bmatrix} \cos 2\theta & \sin 2\theta \\ \sin 2\theta & -\cos 2\theta \end{bmatrix}$$
+          <p class="note">x축(θ=0°) → $\begin{bmatrix}1&0\\0&-1\end{bmatrix}$, &nbsp; y축(θ=90°) → $\begin{bmatrix}-1&0\\0&1\end{bmatrix}$, &nbsp; y=x(θ=45°) → $\begin{bmatrix}0&1\\1&0\end{bmatrix}$</p>
+        </div>
+        <div class="interactive-section">
+          <div class="canvas-wrap">
+            <canvas id="cvsRefl" width="600" height="600"></canvas>
+            <div class="t-slider-row">
+              <span class="slider-label">축 θ</span>
+              <input type="range" id="reflSlider" min="0" max="180" step="1" value="0">
+              <span class="t-val" id="reflVal">0°</span>
+            </div>
+            <div class="preset-row">
+              <button class="pbtn active" data-a="0">x축 (0°)</button>
+              <button class="pbtn" data-a="45">y=x (45°)</button>
+              <button class="pbtn" data-a="90">y축 (90°)</button>
+            </div>
+            <div style="margin-top:0.6rem;display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap;">
+              <label style="font-size:0.85rem;cursor:pointer;display:flex;align-items:center;gap:0.4rem;">
+                <input type="checkbox" id="dualReflCheck"> 이중 반사 보기
+              </label>
+              <div id="dualReflRow" style="display:none;" class="t-slider-row">
+                <span class="slider-label">축₂</span>
+                <input type="range" id="reflSlider2" min="0" max="180" step="1" value="45">
+                <span class="t-val" id="reflVal2">45°</span>
+              </div>
+            </div>
+          </div>
+          <div class="math-panel">
+            <h3>반사 행렬</h3>
+            <div class="calc-group">
+              <div class="label">행렬 F(θ)</div>
+              <div class="calc-row" id="reflMatrix"></div>
+            </div>
+            <div class="calc-group">
+              <div class="label">e₁ → </div>
+              <div class="calc-row" id="reflCol1"></div>
+            </div>
+            <div class="calc-group">
+              <div class="label">e₂ → </div>
+              <div class="calc-row" id="reflCol2"></div>
+            </div>
+            <div class="det-display" id="reflDet"></div>
+            <div id="dualReflInfo" style="display:none;margin-top:0.8rem;padding-top:0.8rem;border-top:1px solid var(--border);">
+              <div class="calc-group">
+                <div class="label">이중 반사 합성 F₂·F₁</div>
+                <div class="calc-row" id="dualReflResult"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <h3>반사 vs 회전</h3>
+        <table class="cmp-table">
+          <thead><tr><th></th><th>회전</th><th>반사</th></tr></thead>
+          <tbody>
+            <tr><td>det</td><td>+1</td><td>−1</td></tr>
+            <tr><td>손잡이</td><td>보존</td><td>뒤집힘</td></tr>
+            <tr><td>합성</td><td>회전+회전 = 회전</td><td>반사+반사 = <strong>회전</strong></td></tr>
+          </tbody>
+        </table>
+        <div class="callout">
+          <div class="callout-title">반사 두 번 = 회전</div>
+          <p style="margin-bottom:0;">두 반사축 사이의 각도가 $\alpha$면, 두 반사를 합성하면 $2\alpha$ 회전이 된다. det(−1)×(−1) = +1 → 방향 보존 → 회전. $F^2 = I$ → 같은 축으로 두 번 반사 = 원래로.</p>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════ -->
+      <!--  4. 전단                                    -->
+      <!-- ══════════════════════════════════════════ -->
+      <section>
+        <h2 id="shear">전단 — 한 축이 미끄러진다</h2>
+        <div class="formula-box">
+          <p style="margin-bottom:0.3rem;">x방향: $H_x = \begin{bmatrix}1&k\\0&1\end{bmatrix}$ — $e_2$가 $(k, 1)$로. &nbsp;&nbsp; y방향: $H_y = \begin{bmatrix}1&0\\k&1\end{bmatrix}$ — $e_1$이 $(1, k)$로.</p>
+          <p class="note">카드 한 덱을 비스듬히 미는 느낌. $\det H = 1$ — 넓이 보존!</p>
+        </div>
+        <div class="interactive-section">
+          <div class="canvas-wrap">
+            <canvas id="cvsShear" width="600" height="600"></canvas>
+            <div class="t-slider-row">
+              <span class="slider-label">k</span>
+              <input type="range" id="shearSlider" min="-2" max="2" step="0.1" value="1">
+              <span class="t-val" id="shearVal">1.00</span>
+            </div>
+            <div class="preset-row">
+              <button class="pbtn active" id="btnShearX">x방향 전단</button>
+              <button class="pbtn" id="btnShearY">y방향 전단</button>
+            </div>
+          </div>
+          <div class="math-panel">
+            <h3>전단 행렬</h3>
+            <div class="calc-group">
+              <div class="label">행렬 H</div>
+              <div class="calc-row" id="shearMatrix"></div>
+            </div>
+            <div class="calc-group">
+              <div class="label">기저 변화</div>
+              <div class="calc-row" id="shearBasis"></div>
+            </div>
+            <div class="det-display" id="shearDet"></div>
+          </div>
+        </div>
+        <div class="callout">
+          <div class="callout-title">전단은 숨겨진 회전+스케일이다</div>
+          <p style="margin-bottom:0;">전단 행렬을 SVD로 분해하면 "회전 → 스케일 → 회전"이 나온다. 단순해 보이는 밀림이 사실은 축을 돌리고, 늘리고, 다시 돌린 것. 이것이 SVD의 기하학적 의미. (Phase 5)</p>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════ -->
+      <!--  5. 종합                                    -->
+      <!-- ══════════════════════════════════════════ -->
+      <section>
+        <h2 id="summary">종합 — 행렬을 보면 변환이 읽힌다</h2>
+        <div class="info-cards">
+          <div class="info-card"><h4>대각만 있나?</h4><p>→ 스케일. 각 대각 원소가 해당 축의 배율.</p></div>
+          <div class="info-card"><h4>cos/sin 패턴?</h4><p>→ 회전. 열벡터가 단위원 위에 있는지 확인.</p></div>
+          <div class="info-card"><h4>det = −1?</h4><p>→ 반사 포함. 손잡이가 뒤집힌다.</p></div>
+          <div class="info-card"><h4>삼각 행렬?</h4><p>→ 전단. 대각선 한쪽만 비영.</p></div>
+          <div class="info-card"><h4>det = 0?</h4><p>→ 차원 축소. 역행렬 없음.</p></div>
+        </div>
+        <p>모든 2D 선형 변환은 이 4가지의 조합이다 — 다음 수업(합성 = 곱셈)의 주제.</p>
+      </section>
+
+      <!-- ══════════════════════════════════════════ -->
+      <!--  6. 직접 해보기                              -->
+      <!-- ══════════════════════════════════════════ -->
+      <section class="exercises">
+        <h2 id="exercises">직접 해보기</h2>
+        <ol>
+          <li><strong>스케일 관찰:</strong> $s_x = 2, s_y = 0.5$일 때 det는? 넓이가 변했나?</li>
+          <li><strong>회전 확인:</strong> 90° 회전 행렬을 직접 적어봐. $e_1$이 어디로 갔는지와 1열을 비교.</li>
+          <li><strong>반사 합성:</strong> x축 반사 후 y축 반사를 적용하면? 행렬을 곱해보고, 결과가 무슨 변환인지 맞춰봐.</li>
+          <li><strong>전단의 det:</strong> 전단 슬라이더를 아무리 올려도 det이 1인 걸 확인. 왜?</li>
+          <li><strong>종합 읽기:</strong> $\begin{bmatrix} 0 & -2 \\ 2 & 0 \end{bmatrix}$은 무슨 변환? (힌트: 회전 + ???)</li>
+        </ol>
+      </section>
+    </div>
+
+    <div class="page-nav" id="page-nav"></div>
+
+    <script>
+    var PAGE_ID = "p2_03";
+    var ON_THIS_PAGE = [
+      { id: "scale", label: "스케일" },
+      { id: "rotation", label: "회전" },
+      { id: "reflection", label: "반사" },
+      { id: "shear", label: "전단" },
+      { id: "summary", label: "종합" },
+      { id: "exercises", label: "직접 해보기" }
+    ];
+    </script>
+    <script src="nav.js"></script>
+  </main>
+
+  <script src="canvas-lib.js"></script>
+  <script>
+// ============================================================
+//  공통 유틸
+// ============================================================
+var DEG = 180 / Math.PI, RAD = Math.PI / 180;
+function fmt(n, d) { return n.toFixed(d === undefined ? 2 : d); }
+
+// m = [a,b,c,d] → [[a,b],[c,d]]
+function mv(m, v)   { return { x: m[0]*v.x + m[1]*v.y, y: m[2]*v.x + m[3]*v.y }; }
+function det4(m)     { return m[0]*m[3] - m[1]*m[2]; }
+
+function drawXGrid(c, m) {
+    var ctx = c.ctx;
+    for (var k = -8; k <= 8; k++) {
+        ctx.strokeStyle = k === 0 ? 'rgba(150,150,200,0.35)' : 'rgba(150,150,200,0.12)';
+        ctx.lineWidth = k === 0 ? 1.5 : 1;
+        var a = c.toS(mv(m,{x:-8,y:k})), b = c.toS(mv(m,{x:8,y:k}));
+        ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+        a = c.toS(mv(m,{x:k,y:-8})); b = c.toS(mv(m,{x:k,y:8}));
+        ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+    }
+}
+
+function drawPara(c, m) {
+    var ctx = c.ctx;
+    var e1 = mv(m,{x:1,y:0}), e2 = mv(m,{x:0,y:1});
+    var o = c.toS({x:0,y:0}), p1 = c.toS(e1), p2 = c.toS(e2), p3 = c.toS(vadd(e1,e2));
+    var d = det4(m);
+    var base = d > 0.01 ? '131,193,103' : d < -0.01 ? '252,98,85' : '200,200,64';
+    ctx.fillStyle = 'rgba('+base+',0.08)'; ctx.strokeStyle = 'rgba('+base+',0.3)'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(o.x,o.y); ctx.lineTo(p1.x,p1.y); ctx.lineTo(p3.x,p3.y); ctx.lineTo(p2.x,p2.y);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+}
+
+function drawUnitCircle(c, m) {
+    var ctx = c.ctx, o = c.toS({x:0,y:0});
+    // 원래 단위원 (점선)
+    ctx.strokeStyle = 'rgba(171,107,219,0.12)'; ctx.lineWidth = 1;
+    ctx.setLineDash([4,3]);
+    ctx.beginPath(); ctx.arc(o.x,o.y,c.UNIT,0,Math.PI*2); ctx.stroke();
+    ctx.setLineDash([]);
+    // 변환된 원
+    ctx.strokeStyle = 'rgba(171,107,219,0.35)'; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    for (var i = 0; i <= 64; i++) {
+        var a = i*Math.PI*2/64;
+        var p = c.toS(mv(m, {x:Math.cos(a),y:Math.sin(a)}));
+        if (i===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);
+    }
+    ctx.closePath(); ctx.stroke();
+}
+
+function drawBasisAndOrigin(c, m) {
+    var e1 = mv(m,{x:1,y:0}), e2 = mv(m,{x:0,y:1});
+    c.drawVector(e1, c.colors.vecA, "e₁'");
+    c.drawVector(e2, c.colors.vecB, "e₂'");
+    var o = c.toS({x:0,y:0}), ctx = c.ctx;
+    ctx.beginPath(); ctx.arc(o.x,o.y,4,0,Math.PI*2);
+    ctx.fillStyle='rgba(200,200,220,0.5)'; ctx.fill();
+}
+
+// L-shape (비대칭 → 반사/회전 차이 확인용)
+var LPTS=[{x:0.3,y:0.3},{x:2,y:0.3},{x:2,y:0.8},{x:0.8,y:0.8},{x:0.8,y:2},{x:0.3,y:2}];
+function drawL(c,m,fill,stroke){
+    var ctx=c.ctx; ctx.beginPath();
+    for(var i=0;i<LPTS.length;i++){
+        var p=c.toS(mv(m,LPTS[i]));
+        if(i===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);
+    }
+    ctx.closePath();
+    ctx.fillStyle=fill||'rgba(171,107,219,0.12)'; ctx.fill();
+    ctx.strokeStyle=stroke||'rgba(171,107,219,0.4)'; ctx.lineWidth=2; ctx.stroke();
+}
+function mulMM(a,b){
+    return [a[0]*b[0]+a[1]*b[2],a[0]*b[1]+a[1]*b[3],
+            a[2]*b[0]+a[3]*b[2],a[2]*b[1]+a[3]*b[3]];
+}
+
+function detColorSpan(d) {
+    var sc = Math.abs(d)<0.02?'zero':d>0?'positive':'negative';
+    return '<span class="vd '+sc+'">'+fmt(d)+'</span>';
+}
+
+// ============================================================
+//  1. 스케일
+// ============================================================
+(function(){
+    var c = createCanvas('cvsScale', {width:600, height:600, unit:50});
+    var sx = 2, sy = 1;
+    var sxS = document.getElementById('sxSlider'), syS = document.getElementById('sySlider');
+    var sxV = document.getElementById('sxVal'), syV = document.getElementById('syVal');
+    sxS.addEventListener('input', function(e){ sx=parseFloat(e.target.value); sxV.textContent=fmt(sx); render(); });
+    syS.addEventListener('input', function(e){ sy=parseFloat(e.target.value); syV.textContent=fmt(sy); render(); });
+
+    function render() {
+        c.clear(); c.drawGrid();
+        var m = [sx,0,0,sy];
+        drawXGrid(c,m); drawUnitCircle(c,m); drawPara(c,m); drawBasisAndOrigin(c,m);
+        var d = det4(m);
+        document.getElementById('scaleMatrix').innerHTML =
+            '[<span class="va">'+fmt(sx)+'</span>  0]<br>[0  <span class="vb">'+fmt(sy)+'</span>]';
+        document.getElementById('scaleCol1').innerHTML =
+            '<span class="va">('+fmt(sx)+', 0)</span>';
+        document.getElementById('scaleCol2').innerHTML =
+            '<span class="vb">(0, '+fmt(sy)+')</span>';
+        document.getElementById('scaleDet').innerHTML =
+            'det = '+fmt(sx)+' × '+fmt(sy)+' = '+detColorSpan(d);
+    }
+    render();
+})();
+
+// ============================================================
+//  2. 회전
+// ============================================================
+(function(){
+    var c = createCanvas('cvsRot', {width:600, height:600, unit:50});
+    var theta = 45;
+    var slider = document.getElementById('rotSlider'), val = document.getElementById('rotVal');
+    slider.addEventListener('input', function(e){ theta=parseInt(e.target.value); val.textContent=theta+'°'; updatePresets(); render(); });
+
+    var presets = document.querySelectorAll('#rotation .preset-row .pbtn');
+    presets.forEach(function(btn){
+        btn.addEventListener('click', function(){
+            theta = parseInt(btn.dataset.a);
+            slider.value = theta; val.textContent = theta+'°';
+            updatePresets(); render();
+        });
+    });
+    function updatePresets() {
+        presets.forEach(function(b){ b.classList.toggle('active', parseInt(b.dataset.a)===theta); });
+    }
+
+    function render() {
+        c.clear(); c.drawGrid();
+        var rad = theta*RAD, cosT = Math.cos(rad), sinT = Math.sin(rad);
+        var m = [cosT,-sinT,sinT,cosT];
+        drawXGrid(c,m); drawUnitCircle(c,m); drawPara(c,m); drawBasisAndOrigin(c,m);
+        document.getElementById('rotMatrix').innerHTML =
+            '[<span class="va">'+fmt(cosT,3)+'</span>  <span class="vb">'+fmt(-sinT,3)+'</span>]<br>'+
+            '[<span class="va">'+fmt(sinT,3)+'</span>  <span class="vb">'+fmt(cosT,3)+'</span>]';
+        document.getElementById('rotCol1').innerHTML =
+            '<span class="va">('+fmt(cosT,3)+', '+fmt(sinT,3)+')</span>';
+        document.getElementById('rotCol2').innerHTML =
+            '<span class="vb">('+fmt(-sinT,3)+', '+fmt(cosT,3)+')</span>';
+        document.getElementById('rotDet').innerHTML =
+            'det = cos²θ + sin²θ = <span class="vd positive">1.00</span> — 넓이·방향 보존';
+    }
+    render();
+})();
+
+// ============================================================
+//  3. 반사 (L자 도형 + 이중반사 데모)
+// ============================================================
+(function(){
+    var c = createCanvas('cvsRefl', {width:600, height:600, unit:50});
+    var phi = 0, phi2 = 45, dualMode = false;
+    var slider = document.getElementById('reflSlider'), val = document.getElementById('reflVal');
+    var slider2 = document.getElementById('reflSlider2'), val2 = document.getElementById('reflVal2');
+    var dualCheck = document.getElementById('dualReflCheck');
+    var dualRow = document.getElementById('dualReflRow'), dualInfo = document.getElementById('dualReflInfo');
+
+    slider.addEventListener('input', function(e){ phi=parseInt(e.target.value); val.textContent=phi+'°'; updatePresets(); render(); });
+    slider2.addEventListener('input', function(e){ phi2=parseInt(e.target.value); val2.textContent=phi2+'°'; render(); });
+    dualCheck.addEventListener('change', function(){ dualMode=this.checked; dualRow.style.display=dualMode?'flex':'none'; dualInfo.style.display=dualMode?'block':'none'; render(); });
+
+    var presets = document.querySelectorAll('#reflection .preset-row .pbtn');
+    presets.forEach(function(btn){
+        btn.addEventListener('click', function(){
+            phi = parseInt(btn.dataset.a);
+            slider.value = phi; val.textContent = phi+'°';
+            updatePresets(); render();
+        });
+    });
+    function updatePresets() {
+        presets.forEach(function(b){ b.classList.toggle('active', parseInt(b.dataset.a)===phi); });
+    }
+
+    function reflMat(angle) {
+        var r = angle*RAD, c2=Math.cos(2*r), s2=Math.sin(2*r);
+        return [c2,s2,s2,-c2];
+    }
+
+    function render() {
+        c.clear(); c.drawGrid();
+        var ctx = c.ctx;
+        var m1 = reflMat(phi);
+
+        // 원래 L (고스트)
+        drawL(c,[1,0,0,1],'rgba(171,107,219,0.05)','rgba(171,107,219,0.15)');
+
+        if (!dualMode) {
+            // 단일 반사
+            // 반사축 (보라 점선)
+            var axD = {x:Math.cos(phi*RAD),y:Math.sin(phi*RAD)};
+            c.drawDashed(vscale(axD,-8), vscale(axD,8), 'rgba(171,107,219,0.5)', 2.5, [8,4]);
+            var lp = c.toS(vscale(axD,5.2));
+            ctx.fillStyle = c.colors.accent; ctx.font = '11px "Noto Sans KR",sans-serif';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+            ctx.fillText('반사축 ('+phi+'°)', lp.x, lp.y - 4);
+
+            drawXGrid(c,m1); drawUnitCircle(c,m1); drawPara(c,m1); drawBasisAndOrigin(c,m1);
+            // 반사된 L (빨강)
+            drawL(c,m1,'rgba(252,98,85,0.1)','rgba(252,98,85,0.45)');
+
+            document.getElementById('reflMatrix').innerHTML =
+                '[<span class="va">'+fmt(m1[0],3)+'</span>  <span class="vb">'+fmt(m1[1],3)+'</span>]<br>'+
+                '[<span class="va">'+fmt(m1[2],3)+'</span>  <span class="vb">'+fmt(m1[3],3)+'</span>]';
+            document.getElementById('reflCol1').innerHTML =
+                '<span class="va">('+fmt(m1[0],3)+', '+fmt(m1[2],3)+')</span>';
+            document.getElementById('reflCol2').innerHTML =
+                '<span class="vb">('+fmt(m1[1],3)+', '+fmt(m1[3],3)+')</span>';
+            document.getElementById('reflDet').innerHTML =
+                'det = <span class="vd negative">−1.00</span> — 항상. 손잡이 뒤집힘';
+        } else {
+            // 이중 반사
+            var m2 = reflMat(phi2);
+            var composed = mulMM(m2, m1); // F₂·F₁
+            var angle = 2*(phi2-phi);
+
+            // 축 1 (보라)
+            var ax1 = {x:Math.cos(phi*RAD),y:Math.sin(phi*RAD)};
+            c.drawDashed(vscale(ax1,-8), vscale(ax1,8), 'rgba(171,107,219,0.4)', 2, [8,4]);
+            var lp1 = c.toS(vscale(ax1,5.2));
+            ctx.fillStyle = 'rgba(171,107,219,0.7)'; ctx.font = '11px "Noto Sans KR",sans-serif';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+            ctx.fillText('축₁ ('+phi+'°)', lp1.x, lp1.y - 4);
+
+            // 축 2 (시안)
+            var ax2 = {x:Math.cos(phi2*RAD),y:Math.sin(phi2*RAD)};
+            c.drawDashed(vscale(ax2,-8), vscale(ax2,8), 'rgba(88,196,221,0.4)', 2, [8,4]);
+            var lp2 = c.toS(vscale(ax2,5.2));
+            ctx.fillStyle = 'rgba(88,196,221,0.7)';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+            ctx.fillText('축₂ ('+phi2+'°)', lp2.x, lp2.y + 4);
+
+            drawXGrid(c,composed); drawPara(c,composed); drawBasisAndOrigin(c,composed);
+            // 합성 결과 L (그린 = 회전!)
+            drawL(c,composed,'rgba(131,193,103,0.12)','rgba(131,193,103,0.45)');
+
+            var d = det4(composed);
+            document.getElementById('reflMatrix').innerHTML =
+                '['+fmt(composed[0],3)+'  '+fmt(composed[1],3)+']<br>['+fmt(composed[2],3)+'  '+fmt(composed[3],3)+']';
+            document.getElementById('reflCol1').innerHTML =
+                '('+fmt(composed[0],3)+', '+fmt(composed[2],3)+')';
+            document.getElementById('reflCol2').innerHTML =
+                '('+fmt(composed[1],3)+', '+fmt(composed[3],3)+')';
+            document.getElementById('reflDet').innerHTML =
+                'det = '+detColorSpan(d)+' — (−1)×(−1) = <span class="vd positive">+1</span> → 회전!';
+            document.getElementById('dualReflResult').innerHTML =
+                '2 × ('+phi2+'° − '+phi+'°) = <span style="color:var(--positive);font-weight:700;">'+angle+'° 회전</span>';
+        }
+    }
+    render();
+})();
+
+// ============================================================
+//  4. 전단
+// ============================================================
+(function(){
+    var c = createCanvas('cvsShear', {width:600, height:600, unit:50});
+    var k = 1, isX = true;
+    var slider = document.getElementById('shearSlider'), val = document.getElementById('shearVal');
+    slider.addEventListener('input', function(e){ k=parseFloat(e.target.value); val.textContent=fmt(k); render(); });
+
+    document.getElementById('btnShearX').addEventListener('click', function(){
+        isX=true; this.classList.add('active'); document.getElementById('btnShearY').classList.remove('active'); render();
+    });
+    document.getElementById('btnShearY').addEventListener('click', function(){
+        isX=false; this.classList.add('active'); document.getElementById('btnShearX').classList.remove('active'); render();
+    });
+
+    function render() {
+        c.clear(); c.drawGrid();
+        var m = isX ? [1,k,0,1] : [1,0,k,1];
+        drawXGrid(c,m); drawUnitCircle(c,m); drawPara(c,m); drawBasisAndOrigin(c,m);
+        var e1 = mv(m,{x:1,y:0}), e2 = mv(m,{x:0,y:1});
+        if (isX) {
+            document.getElementById('shearMatrix').innerHTML =
+                '[1  <span class="vb">'+fmt(k)+'</span>]<br>[0  1]';
+            document.getElementById('shearBasis').innerHTML =
+                '<span class="va">e₁ 고정 (1, 0)</span>, <span class="vb">e₂ → ('+fmt(k)+', 1)</span>';
+        } else {
+            document.getElementById('shearMatrix').innerHTML =
+                '[1  0]<br>[<span class="va">'+fmt(k)+'</span>  1]';
+            document.getElementById('shearBasis').innerHTML =
+                '<span class="va">e₁ → (1, '+fmt(k)+')</span>, <span class="vb">e₂ 고정 (0, 1)</span>';
+        }
+        document.getElementById('shearDet').innerHTML =
+            'det = <span class="vd positive">1.00</span> — 항상. 넓이 보존!';
+    }
+    render();
+})();
+  </script>
+</body>
+</html>

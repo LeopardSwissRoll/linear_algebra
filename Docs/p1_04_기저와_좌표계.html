@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 1 — 기저와 좌표계 | MyAcademy</title>
+    <link rel="stylesheet" href="style.css">
+    <script>
+    MathJax = {
+        tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']] },
+        svg: { fontCache: 'global' }
+    };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+    <style>
+        .preset-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .preset-row .btn { font-size: 0.8rem; padding: 0.3rem 0.7rem; }
+        .preset-row .btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .calc-eq-row { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin: 1.2rem 0; flex-wrap: wrap; }
+        .mat-box { display: grid; gap: 0.3rem; padding: 0.45rem 0.5rem; border-left: 2.5px solid; border-right: 2.5px solid; border-radius: 2px; }
+        .mat-box.m2x2 { grid-template-columns: 1fr 1fr; }
+        .mat-box.col { grid-template-columns: 1fr; }
+        .mat-in { width: 3.5rem; text-align: center; background: var(--bg-surface); border: 1px solid var(--border); color: var(--text-primary); font-family: 'Cascadia Code', Consolas, monospace; font-size: 0.95rem; padding: 0.35rem; border-radius: 4px; transition: border-color 0.2s; }
+        .mat-in:focus { border-color: var(--accent); outline: none; }
+        .mat-out { display: block; width: 3.5rem; text-align: center; font-family: 'Cascadia Code', Consolas, monospace; font-size: 0.95rem; padding: 0.35rem; font-weight: 700; }
+        .mat-op { font-size: 1.3rem; color: var(--text-secondary); padding: 0 0.2rem; }
+        .mat-label { font-size: 0.72rem; text-align: center; color: var(--text-secondary); margin-bottom: 0.3rem; letter-spacing: 0.05em; }
+        .calc-detail { text-align: center; font-family: 'Cascadia Code', Consolas, monospace; font-size: 0.88rem; line-height: 2; color: var(--text-primary); margin-top: 0.5rem; }
+    </style>
+</head>
+<body>
+  <header class="header">
+    <button class="hamburger" id="hamburger" aria-label="메뉴"><span></span><span></span><span></span></button>
+    <div class="header-logo">MyAcademy<span class="subtitle">선형대수 × 그래픽스 × AI</span></div>
+    <button class="theme-toggle" id="themeToggle" aria-label="테마 전환"><span class="theme-toggle-icon"></span></button>
+  </header>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <nav class="sidebar" id="sidebar"></nav>
+
+  <main class="main-content">
+    <div class="content">
+      <div class="page-title">
+        <div class="tag tag-lesson">PHASE 1</div>
+        <h1>기저와 좌표계</h1>
+        <p class="page-desc">좌표는 절대적이지 않다</p>
+      </div>
+
+      <section class="concept-intro">
+          <h2 id="coord-ruler">좌표 = "이 자(ruler)로 재면 얼마"</h2>
+          <p>$(3, 2)$라는 좌표는 사실 이런 뜻이다:</p>
+          <div class="formula-box">
+              $$\vec{P} = 3\,\vec{e_1} + 2\,\vec{e_2}$$
+              <p class="note">"기저 벡터 $\vec{e_1}$을 3번, $\vec{e_2}$를 2번 쓴 것." 기저가 바뀌면 같은 점의 좌표가 달라진다.</p>
+          </div>
+          <p>표준 기저에서 $\vec{e_1} = (1, 0)$, $\vec{e_2} = (0, 1)$이면 익숙한 좌표계다. 하지만 기저를 바꾸면? 같은 점인데 숫자가 달라진다. 아래에서 <span style="color:var(--vec-a);">$\vec{e_1}$</span>과 <span style="color:var(--vec-b);">$\vec{e_2}$</span>를 직접 드래그해봐.</p>
+      </section>
+
+      <section>
+          <h2 id="basis-change">기저를 바꾸면 좌표가 바뀐다</h2>
+          <div class="interactive-section">
+              <div class="canvas-wrap">
+                  <canvas id="cvsBasis" width="600" height="600"></canvas>
+                  <div class="canvas-controls">
+                      <div class="preset-row">
+                          <button class="btn active" id="preStd">표준 기저</button>
+                          <button class="btn" id="preRot">45° 회전</button>
+                          <button class="btn" id="preSkew">기울임</button>
+                          <button class="btn" id="preStretch">비등방 스케일</button>
+                      </div>
+                      <span class="hint-text">e₁, e₂, P 모두 드래그 가능</span>
+                  </div>
+              </div>
+              <div class="math-panel">
+                  <h3>좌표 비교</h3>
+                  <div class="calc-group"><div class="label">기저 벡터</div><div class="calc-row" id="dispBasis"></div></div>
+                  <div class="calc-group"><div class="label">P (표준 좌표)</div><div class="calc-row" id="dispWorld"></div></div>
+                  <div class="calc-group"><div class="label">P (새 기저 좌표)</div><div class="calc-row" id="dispNew"></div></div>
+                  <div class="calc-group" style="margin-top:1rem;padding-top:0.8rem;border-top:1px solid var(--border);"><div class="label">검증</div><div class="calc-row" id="dispVerify" style="font-size:0.85rem;"></div></div>
+                  <div class="calc-group" style="margin-top:1rem;padding-top:0.8rem;border-top:1px solid var(--border);"><div class="label">행렬식 (det)</div><div class="calc-row" id="dispDet"></div></div>
+              </div>
+          </div>
+      </section>
+
+      <section class="concept-intro">
+          <h2 id="matrix-basis">왜 행렬 × 기저좌표 = 세계좌표인가</h2>
+          <p>이 등식이 헷갈린다면, 공식을 잊고 <strong>좌표의 정의</strong>부터 다시 보자.</p>
+          <h3 style="color:var(--text-primary);margin-top:1.5rem;">1단계: 좌표 = 레시피</h3>
+          <p>"P의 기저 좌표가 $(c_1, c_2)$이다"는 이런 뜻이다:</p>
+          <div class="formula-box">
+              $$\vec{P} = c_1 \cdot \vec{e_1} + c_2 \cdot \vec{e_2}$$
+              <p class="note">"$\vec{e_1}$을 $c_1$번, $\vec{e_2}$를 $c_2$번 쓴다." — 이것이 좌표의 <strong>정의</strong>다.</p>
+          </div>
+          <h3 style="color:var(--text-primary);margin-top:1.5rem;">2단계: 이걸 그냥 펼쳐 쓰면 행렬이 된다</h3>
+          <p>$\vec{e_1} = (e_{1x}, e_{1y})$, $\vec{e_2} = (e_{2x}, e_{2y})$를 대입하면:</p>
+          <div class="formula-box">
+              $$\vec{P} = c_1 \begin{bmatrix} e_{1x} \\ e_{1y} \end{bmatrix} + c_2 \begin{bmatrix} e_{2x} \\ e_{2y} \end{bmatrix} = \begin{bmatrix} e_{1x} & e_{2x} \\ e_{1y} & e_{2y} \end{bmatrix} \begin{bmatrix} c_1 \\ c_2 \end{bmatrix}$$
+              <p class="note">왼쪽은 정의, 오른쪽은 같은 걸 행렬로 묶은 것. 새로운 공식이 아니다.</p>
+          </div>
+          <p>그래서 $M \cdot \vec{P}_{\text{basis}} = \vec{P}_{\text{world}}$이다. 이건 유도한 게 아니라, <strong>좌표의 정의를 행렬 기호로 다시 쓴 것</strong>에 불과하다.</p>
+
+          <h3 style="color:var(--text-primary);margin-top:1.5rem;">눈으로 보면 — 행렬 계산기</h3>
+          <p>행렬 셀을 직접 편집하면 위 캔버스가 즉시 바뀐다. 반대로, 위에서 벡터를 드래그하면 여기 숫자가 따라온다.</p>
+          <div class="calc-eq-row">
+              <div>
+                  <div class="mat-label">M (기저 행렬)</div>
+                  <div class="mat-box m2x2" style="border-color:var(--text-secondary);">
+                      <input class="mat-in" id="me1x" style="color:var(--vec-a);" step="0.1">
+                      <input class="mat-in" id="me2x" style="color:var(--vec-b);" step="0.1">
+                      <input class="mat-in" id="me1y" style="color:var(--vec-a);" step="0.1">
+                      <input class="mat-in" id="me2y" style="color:var(--vec-b);" step="0.1">
+                  </div>
+              </div>
+              <span class="mat-op">&times;</span>
+              <div>
+                  <div class="mat-label">기저 좌표</div>
+                  <div class="mat-box col" style="border-color:var(--accent);">
+                      <input class="mat-in" id="cc1" style="color:var(--accent);" step="0.1">
+                      <input class="mat-in" id="cc2" style="color:var(--accent);" step="0.1">
+                  </div>
+              </div>
+              <span class="mat-op">=</span>
+              <div>
+                  <div class="mat-label">세계 좌표 P</div>
+                  <div class="mat-box col" style="border-color:var(--vec-c);">
+                      <span class="mat-out" id="rpx" style="color:var(--vec-c);"></span>
+                      <span class="mat-out" id="rpy" style="color:var(--vec-c);"></span>
+                  </div>
+              </div>
+          </div>
+          <div class="calc-detail" id="calcDetail"></div>
+
+          <h3 style="color:var(--text-primary);margin-top:1.5rem;">3단계: 반대 방향 — 세계 → 기저</h3>
+          <p>"P의 세계 좌표는 아는데, 기저 좌표를 모른다"면? 위 등식의 양변에 $M^{-1}$을 곱으면 된다:</p>
+          <div class="formula-box">$$\vec{P}_{\text{basis}} = M^{-1} \cdot \vec{P}_{\text{world}}$$</div>
+          <p>2×2 역행렬 공식:</p>
+          <div class="formula-box">
+              $$M^{-1} = \frac{1}{\det(M)} \begin{bmatrix} e_{2y} & -e_{2x} \\ -e_{1y} & e_{1x} \end{bmatrix}, \quad \det(M) = e_{1x}\,e_{2y} - e_{2x}\,e_{1y}$$
+              <p class="note">위 행렬 계산기에서 기저 좌표를 바꿔보면 역행렬이 실제로 뭘 하는지 체감된다.</p>
+          </div>
+      </section>
+
+      <section class="exercises">
+          <h2 id="exercises">직접 해보기</h2>
+          <ol>
+              <li><strong>표준 기저 확인:</strong> "표준 기저" 프리셋에서, P의 세계 좌표와 기저 좌표가 같은 걸 확인.</li>
+              <li><strong>45° 회전:</strong> 회전 프리셋을 눌러봐. P의 기저 좌표 (3.0, 2.0)은 그대로인데, 세계 좌표가 바뀌면서 P가 움직이는 걸 확인.</li>
+              <li><strong>행렬 편집:</strong> 계산기에서 e₁의 x를 3으로 바꿔봐. 캔버스와 풀이가 즉시 바뀌는 걸 확인.</li>
+              <li><strong>기울임:</strong> $\vec{e_1}$과 $\vec{e_2}$를 거의 평행하게 만들어봐. det → 0이면 좌표가 어떻게 되는지 관찰.</li>
+              <li><strong>다음 수업:</strong> <a href="p1_05_동차좌표.html" style="color:var(--accent);">동차 좌표</a>로 넘어가서 "이동을 행렬 곱으로" 만드는 트릭을 배워봐.</li>
+          </ol>
+      </section>
+    </div>
+
+    <div class="page-nav" id="page-nav"></div>
+
+    <script>
+    var PAGE_ID = "p1_04";
+    var ON_THIS_PAGE = [
+      { id: "coord-ruler", label: "좌표 = 자(ruler)" },
+      { id: "basis-change", label: "기저를 바꾸면" },
+      { id: "matrix-basis", label: "행렬 × 기저좌표" },
+      { id: "exercises", label: "직접 해보기" }
+    ];
+    </script>
+    <script src="nav.js"></script>
+  </main>
+
+  <script src="canvas-lib.js"></script>
+  <script>
+// ============================================================
+//  상태
+// ============================================================
+let e1 = { x: 1, y: 0 };
+let e2 = { x: 0, y: 1 };
+let pBasis = { x: 3, y: 2 };
+
+function pWorld() { return vadd(vscale(e1, pBasis.x), vscale(e2, pBasis.y)); }
+function basisDet() { return e1.x * e2.y - e2.x * e1.y; }
+function toBasisCoords(p) {
+    const d = basisDet();
+    if (Math.abs(d) < 1e-9) return null;
+    return { x: (e2.y*p.x - e2.x*p.y)/d, y: (-e1.y*p.x + e1.x*p.y)/d };
+}
+
+// ============================================================
+//  메인 캔버스
+// ============================================================
+const lc = createCanvas('cvsBasis');
+
+function drawBasisGrid() {
+    const ctx = lc.ctx;
+    if (Math.abs(basisDet()) < 0.05) return;
+    ctx.lineWidth = 1;
+    for (let k = -10; k <= 10; k++) {
+        const alpha = k === 0 ? 0.25 : 0.1;
+        ctx.strokeStyle = `rgba(171,107,219,${alpha})`;
+        const b1 = vscale(e2, k);
+        const f1 = lc.toS(vadd(b1, vscale(e1, -10))), t1 = lc.toS(vadd(b1, vscale(e1, 10)));
+        ctx.beginPath(); ctx.moveTo(f1.x, f1.y); ctx.lineTo(t1.x, t1.y); ctx.stroke();
+        const b2 = vscale(e1, k);
+        const f2 = lc.toS(vadd(b2, vscale(e2, -10))), t2 = lc.toS(vadd(b2, vscale(e2, 10)));
+        ctx.beginPath(); ctx.moveTo(f2.x, f2.y); ctx.lineTo(t2.x, t2.y); ctx.stroke();
+    }
+}
+
+function drawDecomposition() {
+    if (Math.abs(basisDet()) < 0.05) return;
+    const ctx = lc.ctx, pw = pWorld();
+    const step1 = vscale(e1, pBasis.x);
+    const o = lc.toS({x:0,y:0}), s1 = lc.toS(step1), pS = lc.toS(pw);
+    ctx.strokeStyle = lc.colors.vecA + '88'; ctx.lineWidth = 2.5; ctx.setLineDash([6,4]);
+    ctx.beginPath(); ctx.moveTo(o.x,o.y); ctx.lineTo(s1.x,s1.y); ctx.stroke();
+    ctx.strokeStyle = lc.colors.vecB + '88';
+    ctx.beginPath(); ctx.moveTo(s1.x,s1.y); ctx.lineTo(pS.x,pS.y); ctx.stroke();
+    ctx.setLineDash([]);
+    if (mag(step1) > 0.3) {
+        const m1 = lc.toS(vscale(step1,0.5));
+        ctx.fillStyle = lc.colors.vecA+'dd'; ctx.font = 'bold 13px Consolas, monospace';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+        ctx.fillText(pBasis.x.toFixed(1), m1.x, m1.y-8);
+    }
+    if (Math.abs(pBasis.y) > 0.3) {
+        const m2 = lc.toS(vadd(step1, vscale(e2, pBasis.y*0.5)));
+        ctx.fillStyle = lc.colors.vecB+'dd'; ctx.font = 'bold 13px Consolas, monospace';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        ctx.fillText(pBasis.y.toFixed(1), m2.x+8, m2.y);
+    }
+}
+
+function render() {
+    const pw = pWorld();
+    lc.clear(); lc.drawGrid(); drawBasisGrid(); drawDecomposition();
+    lc.drawVector(e1, lc.colors.vecA, 'e₁');
+    lc.drawVector(e2, lc.colors.vecB, 'e₂');
+    lc.drawVector(pw, lc.colors.vecC, '');
+    lc.drawPoint(pw, lc.colors.vecC, '');
+    const ctx = lc.ctx, pS = lc.toS(pw);
+    ctx.font = 'bold 13px Consolas, monospace'; ctx.textAlign = 'left';
+    ctx.fillStyle = 'rgba(171,107,219,0.95)';
+    ctx.fillText(`P (${pBasis.x.toFixed(1)}, ${pBasis.y.toFixed(1)})`, pS.x+14, pS.y-10);
+    ctx.fillStyle = 'rgba(200,200,220,0.45)'; ctx.font = '11px Consolas, monospace';
+    ctx.fillText(`world (${pw.x.toFixed(1)}, ${pw.y.toFixed(1)})`, pS.x+14, pS.y+8);
+    lc.drawHandle(e1, lc.colors.vecA, drag.isHovered('e1'));
+    lc.drawHandle(e2, lc.colors.vecB, drag.isHovered('e2'));
+    lc.drawHandle(pw, lc.colors.vecC, drag.isHovered('p'));
+    updatePanel();
+    syncToInputs();
+    updateCalcDisplay();
+}
+
+// ============================================================
+//  드래그
+// ============================================================
+const drag = lc.makeDraggable([
+    { id: 'e1', get: () => e1, set: v => { e1 = v; }, color: lc.colors.vecA },
+    { id: 'e2', get: () => e2, set: v => { e2 = v; }, color: lc.colors.vecB },
+    { id: 'p',  get: pWorld,   set: v => { const bc = toBasisCoords(v); if (bc) pBasis = bc; }, color: lc.colors.vecC },
+], render, { clamp: 5.5 });
+
+// ============================================================
+//  사이드 패널
+// ============================================================
+function updatePanel() {
+    const pw = pWorld(), d = basisDet();
+    const f = n => n.toFixed(2), f1 = n => n.toFixed(1);
+    document.getElementById('dispBasis').innerHTML =
+        `<span class="va"><b><i>e₁</i></b> = (${f1(e1.x)}, ${f1(e1.y)})</span><br><span class="vb"><b><i>e₂</i></b> = (${f1(e2.x)}, ${f1(e2.y)})</span>`;
+    document.getElementById('dispWorld').innerHTML =
+        `<span class="vc"><b>P</b> = (${f1(pw.x)}, ${f1(pw.y)})</span>`;
+    if (Math.abs(d) > 1e-9) {
+        document.getElementById('dispNew').innerHTML =
+            `<span style="color:var(--accent);font-weight:700;">(${f(pBasis.x)}, ${f(pBasis.y)})</span>`;
+        document.getElementById('dispVerify').innerHTML =
+            `<span class="va">${f(pBasis.x)}</span>·<span class="va">e₁</span> + <span class="vb">${f(pBasis.y)}</span>·<span class="vb">e₂</span> = <span class="vc">(${f(pw.x)}, ${f(pw.y)})</span> ✓`;
+    } else {
+        document.getElementById('dispNew').innerHTML = `<span style="color:var(--negative);">정의 불가 (det ≈ 0)</span>`;
+        document.getElementById('dispVerify').innerHTML = `<span style="color:var(--negative);">기저가 퇴화</span>`;
+    }
+    const sc = Math.abs(d) < 0.05 ? 'zero' : d > 0 ? 'positive' : 'negative';
+    document.getElementById('dispDet').innerHTML =
+        `<span class="vd ${sc}">${f(d)}</span><span style="color:var(--text-secondary);font-size:0.82rem;margin-left:0.5rem;">` +
+        (Math.abs(d)<0.05 ? '(퇴화!)' : d>0 ? '(방향 보존)' : '(방향 뒤집힘)') + '</span>';
+}
+
+// ============================================================
+//  행렬 계산기 — 양방향 동기화
+// ============================================================
+const matEls = {
+    e1x: document.getElementById('me1x'), e2x: document.getElementById('me2x'),
+    e1y: document.getElementById('me1y'), e2y: document.getElementById('me2y'),
+    c1: document.getElementById('cc1'),   c2: document.getElementById('cc2'),
+};
+let _syncing = false;
+
+function syncToInputs() {
+    if (_syncing) return;
+    _syncing = true;
+    matEls.e1x.value = e1.x.toFixed(1); matEls.e1y.value = e1.y.toFixed(1);
+    matEls.e2x.value = e2.x.toFixed(1); matEls.e2y.value = e2.y.toFixed(1);
+    matEls.c1.value = pBasis.x.toFixed(1); matEls.c2.value = pBasis.y.toFixed(1);
+    _syncing = false;
+}
+
+function syncFromInputs() {
+    if (_syncing) return;
+    _syncing = true;
+    e1 = { x: parseFloat(matEls.e1x.value)||0, y: parseFloat(matEls.e1y.value)||0 };
+    e2 = { x: parseFloat(matEls.e2x.value)||0, y: parseFloat(matEls.e2y.value)||0 };
+    pBasis = { x: parseFloat(matEls.c1.value)||0, y: parseFloat(matEls.c2.value)||0 };
+    _syncing = false;
+    render();
+}
+
+function updateCalcDisplay() {
+    const pw = pWorld(), f = n => n.toFixed(1), f2 = n => n.toFixed(2);
+    document.getElementById('rpx').textContent = f2(pw.x);
+    document.getElementById('rpy').textContent = f2(pw.y);
+    const a='color:var(--vec-a)', b='color:var(--vec-b)', ac='color:var(--accent)', g='color:var(--vec-c);font-weight:700';
+    document.getElementById('calcDetail').innerHTML =
+        `P<sub>x</sub> = <span style="${a}">${f(e1.x)}</span> × <span style="${ac}">${f(pBasis.x)}</span> + <span style="${b}">${f(e2.x)}</span> × <span style="${ac}">${f(pBasis.y)}</span> = <span style="${g}">${f2(pw.x)}</span><br>` +
+        `P<sub>y</sub> = <span style="${a}">${f(e1.y)}</span> × <span style="${ac}">${f(pBasis.x)}</span> + <span style="${b}">${f(e2.y)}</span> × <span style="${ac}">${f(pBasis.y)}</span> = <span style="${g}">${f2(pw.y)}</span>`;
+}
+
+Object.values(matEls).forEach(el => el.addEventListener('input', syncFromInputs));
+
+// ============================================================
+//  프리셋
+// ============================================================
+const presets = {
+    preStd:     { e1:{x:1,y:0},       e2:{x:0,y:1} },
+    preRot:     { e1:{x:0.707,y:0.707},e2:{x:-0.707,y:0.707} },
+    preSkew:    { e1:{x:1,y:0.5},      e2:{x:0,y:1} },
+    preStretch: { e1:{x:2,y:0},        e2:{x:0,y:0.5} },
+};
+Object.keys(presets).forEach(id => {
+    document.getElementById(id).addEventListener('click', () => {
+        e1 = { ...presets[id].e1 }; e2 = { ...presets[id].e2 };
+        document.querySelectorAll('.preset-row .btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        render();
+    });
+});
+
+// ============================================================
+//  Init
+// ============================================================
+render();
+  </script>
+</body>
+</html>

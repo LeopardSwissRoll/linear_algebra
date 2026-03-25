@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 1 — 체크포인트 | MyAcademy</title>
+    <link rel="stylesheet" href="style.css">
+    <script>
+    MathJax = {
+        tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']] },
+        svg: { fontCache: 'global' }
+    };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+    <style>
+        /* ── Score Banner ── */
+        .score-banner {
+            display: none;
+            text-align: center;
+            padding: 1.2rem 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            font-size: 1.3rem;
+            font-weight: 700;
+            border: 1px solid var(--border);
+        }
+        .score-banner.perfect {
+            background: rgba(131, 193, 103, 0.12);
+            color: var(--positive);
+            border-color: rgba(131, 193, 103, 0.3);
+        }
+        .score-banner.good {
+            background: rgba(171, 107, 219, 0.12);
+            color: var(--accent);
+            border-color: rgba(171, 107, 219, 0.3);
+        }
+        .score-banner.bad {
+            background: rgba(252, 98, 85, 0.1);
+            color: var(--negative);
+            border-color: rgba(252, 98, 85, 0.25);
+        }
+
+        /* ── Button Row ── */
+        .btn-row {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin: 2rem 0;
+            flex-wrap: wrap;
+        }
+        .btn-primary {
+            background: var(--accent);
+            border: none;
+            color: #fff;
+            padding: 0.7rem 2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: inherit;
+            transition: all 0.2s;
+            letter-spacing: 0.03em;
+        }
+        .btn-primary:hover {
+            filter: brightness(1.15);
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 0.7rem 2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        .btn-secondary:hover {
+            background: var(--bg-card);
+            border-color: rgba(100, 100, 160, 0.3);
+        }
+
+        /* ── Problem Cards ── */
+        .problem-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem 1.8rem;
+            margin-bottom: 1.5rem;
+            transition: border-color 0.3s;
+        }
+        .problem-card.correct {
+            border-color: rgba(131, 193, 103, 0.4);
+        }
+        .problem-card.wrong {
+            border-color: rgba(252, 98, 85, 0.4);
+        }
+        .problem-num {
+            display: inline-block;
+            background: rgba(171, 107, 219, 0.15);
+            color: var(--accent);
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.2rem 0.7rem;
+            border-radius: 12px;
+            margin-bottom: 0.8rem;
+            letter-spacing: 0.1em;
+        }
+        .problem-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.6rem;
+        }
+        .problem-body {
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            line-height: 1.7;
+        }
+        .problem-body .vec-a { color: var(--vec-a); font-weight: 600; }
+        .problem-body .vec-b { color: var(--vec-b); font-weight: 600; }
+
+        /* ── Answer Input ── */
+        .answer-row {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+        }
+        .answer-row label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+        .answer-input {
+            background: var(--bg-deep);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            padding: 0.45rem 0.8rem;
+            font-size: 1rem;
+            font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace;
+            width: 120px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .answer-input:focus {
+            border-color: var(--accent);
+        }
+        .answer-input.correct-input {
+            border-color: var(--positive);
+            color: var(--positive);
+        }
+        .answer-input.wrong-input {
+            border-color: var(--negative);
+            color: var(--negative);
+        }
+        .result-icon {
+            font-size: 1.3rem;
+            display: none;
+        }
+        .result-icon.show { display: inline; }
+
+        /* ── Feedback Area ── */
+        .feedback {
+            display: none;
+            margin-top: 1.2rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+        .feedback.show { display: block; }
+        .feedback-correct {
+            color: var(--positive);
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        .feedback-wrong {
+            color: var(--negative);
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 0.8rem;
+        }
+        .feedback canvas {
+            display: block;
+            margin: 0.8rem 0;
+            border-radius: 10px;
+        }
+        .feedback .explain-text {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            margin-top: 0.5rem;
+        }
+        .feedback .explain-text .val {
+            color: var(--text-primary);
+            font-weight: 600;
+            font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 700px) {
+            .problem-card { padding: 1.2rem; }
+            .answer-input { width: 100px; }
+        }
+    </style>
+</head>
+<body>
+  <header class="header">
+    <button class="hamburger" id="hamburger" aria-label="메뉴"><span></span><span></span><span></span></button>
+    <div class="header-logo">MyAcademy<span class="subtitle">선형대수 × 그래픽스 × AI</span></div>
+    <button class="theme-toggle" id="themeToggle" aria-label="테마 전환"><span class="theme-toggle-icon"></span></button>
+  </header>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <nav class="sidebar" id="sidebar"></nav>
+
+  <main class="main-content">
+    <div class="content">
+      <div class="page-title">
+        <div class="tag tag-checkpoint">CHECKPOINT</div>
+        <h1>체크포인트 — 연습 문제</h1>
+        <p class="page-desc">매번 새로운 문제. 틀리면 비주얼 오답노트.</p>
+      </div>
+
+      <!-- Score Banner -->
+      <div class="score-banner" id="scoreBanner"></div>
+
+      <!-- Button Row (top) -->
+      <div class="btn-row">
+          <button class="btn-primary" id="btnGrade" onclick="grade()">채점하기</button>
+          <button class="btn-secondary" id="btnNew" onclick="generateAll()">새 문제</button>
+      </div>
+
+      <!-- Problem Cards Container -->
+      <div id="problems"></div>
+
+      <!-- Button Row (bottom) -->
+      <div class="btn-row">
+          <button class="btn-primary" onclick="grade()">채점하기</button>
+          <button class="btn-secondary" onclick="generateAll()">새 문제</button>
+      </div>
+    </div>
+
+    <div class="page-nav" id="page-nav"></div>
+
+    <script>
+    var PAGE_ID = "p1_06";
+    var ON_THIS_PAGE = [
+    ];
+    </script>
+    <script src="nav.js"></script>
+  </main>
+
+  <script src="canvas-lib.js"></script>
+  <script>
+// ============================================================
+//  유틸
+// ============================================================
+function randInt(lo, hi) {
+    // inclusive [lo, hi]
+    return Math.floor(Math.random() * (hi - lo + 1)) + lo;
+}
+
+function randVec(lo, hi) {
+    let v;
+    do { v = { x: randInt(lo, hi), y: randInt(lo, hi) }; }
+    while (v.x === 0 && v.y === 0);
+    return v;
+}
+
+function fmtVec(v) {
+    return `(${v.x}, ${v.y})`;
+}
+
+// ============================================================
+//  문제 생성기 (6개)
+// ============================================================
+const generators = [];
+let problems = [];  // 현재 문제 데이터 배열
+
+// ── 1. 내적 계산 ──
+generators.push(function genDot() {
+    const a = randVec(-4, 4), b = randVec(-4, 4);
+    const answer = a.x * b.x + a.y * b.y;
+    return {
+        num: 1,
+        title: '내적(Dot Product) 계산',
+        body: `<span class="vec-a">a = ${fmtVec(a)}</span>, <span class="vec-b">b = ${fmtVec(b)}</span> 일 때, $\\vec{a} \\cdot \\vec{b}$ = ?`,
+        answer: answer,
+        epsilon: 0,
+        a: a, b: b,
+        drawWrong: function(canvasId, userAns) {
+            const c = createCanvas(canvasId, { width: 280, height: 280, unit: 30 });
+            c.clear(); c.drawGrid();
+            c.drawVector(a, c.colors.vecA, 'a');
+            c.drawVector(b, c.colors.vecB, 'b');
+            c.drawProjection(a, b, true);
+            const ctx = c.ctx;
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 14px "Noto Sans KR", sans-serif';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+            ctx.fillText(`a·b = ${a.x}×${b.x} + ${a.y}×${b.y} = ${answer}`, 140, 254);
+        },
+        explain: `$\\vec{a} \\cdot \\vec{b} = a_x b_x + a_y b_y = (${a.x})(${b.x}) + (${a.y})(${b.y}) = $ <span class="val">${answer}</span>.<br>캔버스에서 b를 a에 사영(projection)한 모습을 확인하세요. 내적은 "b가 a 방향으로 얼마나 뻗어있는가 × |a|"입니다.`
+    };
+});
+
+// ── 2. 2D 외적 (signed area) ──
+generators.push(function genCross() {
+    const a = randVec(-4, 4), b = randVec(-4, 4);
+    const answer = a.x * b.y - a.y * b.x;
+    return {
+        num: 2,
+        title: '2D 외적 (부호 있는 넓이)',
+        body: `<span class="vec-a">a = ${fmtVec(a)}</span>, <span class="vec-b">b = ${fmtVec(b)}</span> 일 때, $a_x b_y - a_y b_x$ = ?`,
+        answer: answer,
+        epsilon: 0,
+        a: a, b: b,
+        drawWrong: function(canvasId, userAns) {
+            const c = createCanvas(canvasId, { width: 280, height: 280, unit: 30 });
+            c.clear(); c.drawGrid();
+            const ctx = c.ctx;
+            const o = c.toS({x:0,y:0}), sa = c.toS(a), sb = c.toS(b), sab = c.toS(vadd(a,b));
+            ctx.beginPath();
+            ctx.moveTo(o.x, o.y); ctx.lineTo(sa.x, sa.y);
+            ctx.lineTo(sab.x, sab.y); ctx.lineTo(sb.x, sb.y);
+            ctx.closePath();
+            const fillColor = answer >= 0 ? 'rgba(131,193,103,0.15)' : 'rgba(252,98,85,0.15)';
+            ctx.fillStyle = fillColor; ctx.fill();
+            ctx.strokeStyle = answer >= 0 ? c.colors.positive : c.colors.negative;
+            ctx.lineWidth = 1.5; ctx.setLineDash([4,3]); ctx.stroke(); ctx.setLineDash([]);
+
+            c.drawVector(a, c.colors.vecA, 'a');
+            c.drawVector(b, c.colors.vecB, 'b');
+
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 14px "Noto Sans KR", sans-serif';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+            ctx.fillText(`a×b = ${a.x}×${b.y} - ${a.y}×${b.x} = ${answer}`, 140, 254);
+        },
+        explain: `$a_x b_y - a_y b_x = (${a.x})(${b.y}) - (${a.y})(${b.x}) = $ <span class="val">${answer}</span>.<br>이 값은 a와 b가 만드는 평행사변형의 부호 있는 넓이입니다. 양수면 a→b가 반시계, 음수면 시계 방향입니다.`
+    };
+});
+
+// ── 3. 벡터 크기 (소수점 2자리) ──
+generators.push(function genMag() {
+    const cleanVecs = [
+        {x:1,y:0},{x:2,y:0},{x:3,y:0},{x:4,y:0},
+        {x:0,y:1},{x:0,y:2},{x:0,y:3},{x:0,y:4},
+        {x:-1,y:0},{x:-2,y:0},{x:-3,y:0},{x:-4,y:0},
+        {x:0,y:-1},{x:0,y:-2},{x:0,y:-3},{x:0,y:-4},
+        {x:3,y:4},{x:4,y:3},{x:-3,y:4},{x:3,y:-4},
+        {x:-3,y:-4},{x:-4,y:3},{x:4,y:-3},{x:-4,y:-3},
+    ];
+    const a = cleanVecs[Math.floor(Math.random() * cleanVecs.length)];
+    const answer = Math.sqrt(a.x * a.x + a.y * a.y);
+    const answerRounded = Math.round(answer * 100) / 100;
+    return {
+        num: 3,
+        title: '벡터의 크기',
+        body: `<span class="vec-a">a = ${fmtVec(a)}</span> 일 때, $|\\vec{a}|$ = ? <span style="color:var(--text-secondary);font-size:0.85rem;">(소수점 2자리까지)</span>`,
+        answer: answerRounded,
+        epsilon: 0.1,
+        a: a,
+        drawWrong: function(canvasId, userAns) {
+            const c = createCanvas(canvasId, { width: 280, height: 280, unit: 30 });
+            c.clear(); c.drawGrid();
+            c.drawVector(a, c.colors.vecA, 'a');
+
+            const ctx = c.ctx;
+            const o = c.toS({x:0,y:0});
+            const px = c.toS({x:a.x, y:0});
+            const pa = c.toS(a);
+            ctx.strokeStyle = 'rgba(171,107,219,0.5)'; ctx.lineWidth = 1.5;
+            ctx.setLineDash([5,3]);
+            ctx.beginPath(); ctx.moveTo(o.x, o.y); ctx.lineTo(px.x, px.y); ctx.lineTo(pa.x, pa.y); ctx.stroke();
+            ctx.setLineDash([]);
+
+            const sz = 8;
+            const dirX = a.x >= 0 ? 1 : -1;
+            const dirY = a.y >= 0 ? -1 : 1;
+            ctx.strokeStyle = 'rgba(171,107,219,0.6)'; ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(px.x, px.y + dirY * sz);
+            ctx.lineTo(px.x - dirX * sz, px.y + dirY * sz);
+            ctx.lineTo(px.x - dirX * sz, px.y);
+            ctx.stroke();
+
+            ctx.fillStyle = c.colors.vecA; ctx.font = 'bold 12px Consolas, monospace';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+            ctx.fillText(`${Math.abs(a.x)}`, (o.x + px.x) / 2, Math.max(o.y, px.y) + 6);
+            ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+            ctx.fillText(`${Math.abs(a.y)}`, Math.max(px.x, pa.x) + 6, (px.y + pa.y) / 2);
+
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 14px "Noto Sans KR", sans-serif';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+            ctx.fillText(`|a| = √(${a.x}²+${a.y}²) = ${answerRounded}`, 140, 254);
+        },
+        explain: `$|\\vec{a}| = \\sqrt{${a.x}^2 + ${a.y}^2} = \\sqrt{${a.x*a.x + a.y*a.y}} \\approx $ <span class="val">${answerRounded}</span>.<br>피타고라스 정리 — 직각삼각형의 빗변이 벡터의 크기입니다.`
+    };
+});
+
+// ── 4. 사영 길이 ──
+generators.push(function genProj() {
+    const cleanA = [
+        {x:1,y:0},{x:2,y:0},{x:3,y:0},{x:4,y:0},
+        {x:0,y:1},{x:0,y:2},{x:0,y:3},{x:0,y:4},
+        {x:-1,y:0},{x:-2,y:0},{x:-3,y:0},{x:-4,y:0},
+        {x:0,y:-1},{x:0,y:-2},{x:0,y:-3},{x:0,y:-4},
+        {x:3,y:4},{x:4,y:3},{x:-3,y:4},{x:3,y:-4},
+        {x:-3,y:-4},{x:-4,y:3},{x:4,y:-3},{x:-4,y:-3},
+    ];
+    const a = cleanA[Math.floor(Math.random() * cleanA.length)];
+    const b = randVec(-4, 4);
+    const projLen = (a.x * b.x + a.y * b.y) / Math.sqrt(a.x * a.x + a.y * a.y);
+    const answerRounded = Math.round(projLen * 100) / 100;
+    return {
+        num: 4,
+        title: '사영 길이 (Projection Length)',
+        body: `<span class="vec-a">a = ${fmtVec(a)}</span>, <span class="vec-b">b = ${fmtVec(b)}</span> 일 때,<br>
+               b를 a 위에 사영한 길이 $\\text{proj}_{a}\\,b = \\frac{\\vec{a}\\cdot\\vec{b}}{|\\vec{a}|}$ = ? <span style="color:var(--text-secondary);font-size:0.85rem;">(소수점 2자리까지)</span>`,
+        answer: answerRounded,
+        epsilon: 0.1,
+        a: a, b: b,
+        drawWrong: function(canvasId, userAns) {
+            const c = createCanvas(canvasId, { width: 280, height: 280, unit: 30 });
+            c.clear(); c.drawGrid();
+            c.drawVector(a, c.colors.vecA, 'a');
+            c.drawVector(b, c.colors.vecB, 'b');
+            c.drawProjection(a, b, true);
+
+            const dAA = dot(a, a);
+            const s = dot(a, b) / dAA;
+            const pv = vscale(a, s);
+            const sp = c.toS(pv);
+            const ctx = c.ctx;
+            ctx.fillStyle = c.colors.proj; ctx.font = 'bold 12px Consolas, monospace';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+            ctx.fillText(answerRounded.toString(), sp.x, sp.y - 8);
+
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 13px "Noto Sans KR", sans-serif';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+            ctx.fillText(`proj = (a·b)/|a| = ${answerRounded}`, 140, 254);
+        },
+        explain: `$\\text{proj}_{a}\\,b = \\frac{\\vec{a}\\cdot\\vec{b}}{|\\vec{a}|} = \\frac{${dot(a,b)}}{${(Math.round(mag(a)*100)/100)}} \\approx $ <span class="val">${answerRounded}</span>.<br>빨간 점선이 사영 벡터이고, 수선(perpendicular drop)이 직각을 이룹니다. 음수면 반대 방향 사영입니다.`
+    };
+});
+
+// ── 5. 동차 좌표 복원 ──
+generators.push(function genHomogeneous() {
+    const w = randInt(2, 5);
+    const realX = randInt(-4, 4);
+    const realY = randInt(-4, 4);
+    const X = realX * w;
+    const Y = realY * w;
+    return {
+        num: 5,
+        title: '동차 좌표 복원',
+        body: `동차 좌표 $(${X},\\, ${Y},\\, ${w})$ 를 실제 2D 좌표로 변환하면?<br>
+               <span style="color:var(--text-secondary);font-size:0.85rem;">x좌표를 답하세요 (정수)</span>`,
+        answer: realX,
+        epsilon: 0,
+        X: X, Y: Y, w: w, realX: realX, realY: realY,
+        drawWrong: function(canvasId, userAns) {
+            const c = createCanvas(canvasId, { width: 280, height: 280, unit: 30 });
+            c.clear(); c.drawGrid();
+
+            const pt = { x: realX, y: realY };
+            c.drawPoint(pt, c.colors.vecC, `(${realX}, ${realY})`);
+
+            const ctx = c.ctx;
+            ctx.fillStyle = c.colors.accent; ctx.font = '13px "Noto Sans KR", sans-serif';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+            ctx.fillText(`(${X}, ${Y}, ${w})`, 140, 10);
+
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 14px "Noto Sans KR", sans-serif';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+            ctx.fillText(`÷ w=${w} → (${realX}, ${realY})`, 140, 254);
+        },
+        explain: `$(X, Y, w) = (${X}, ${Y}, ${w})$이므로 $w$로 나누면:<br>$x = ${X} / ${w} = $ <span class="val">${realX}</span>, $y = ${Y} / ${w} = $ <span class="val">${realY}</span>.<br>동차 좌표는 실제 좌표를 $w$로 나눠서 복원합니다.`
+    };
+});
+
+// ── 6. 기저 좌표 변환 ──
+generators.push(function genBasisCoord() {
+    let e1, e2, P, det;
+    do {
+        e1 = randVec(-3, 3);
+        e2 = randVec(-3, 3);
+        det = e1.x * e2.y - e2.x * e1.y;
+    } while (det === 0);
+
+    const c1 = randInt(-3, 3);
+    const c2 = randInt(-3, 3);
+    P = { x: c1 * e1.x + c2 * e2.x, y: c1 * e1.y + c2 * e2.y };
+
+    const answer = Math.round(((e2.y * P.x - e2.x * P.y) / det) * 100) / 100;
+    return {
+        num: 6,
+        title: '기저 좌표 변환',
+        body: `기저: <span class="vec-a">$\\vec{e_1}$ = ${fmtVec(e1)}</span>, <span class="vec-b">$\\vec{e_2}$ = ${fmtVec(e2)}</span><br>
+               점 $P = ${fmtVec(P)}$ 의 첫 번째 기저 좌표 $c_1$ = ? <span style="color:var(--text-secondary);font-size:0.85rem;">(소수점 2자리까지)</span><br>
+               <span style="color:var(--text-secondary);font-size:0.82rem;">($P = c_1 \\vec{e_1} + c_2 \\vec{e_2}$에서 $c_1$)</span>`,
+        answer: answer,
+        epsilon: 0.1,
+        e1: e1, e2: e2, P: P, c1: c1, c2: c2, det: det,
+        drawWrong: function(canvasId, userAns) {
+            const c = createCanvas(canvasId, { width: 280, height: 280, unit: 30 });
+            c.clear(); c.drawGrid();
+            c.drawVector(e1, c.colors.vecA, 'e₁');
+            c.drawVector(e2, c.colors.vecB, 'e₂');
+            c.drawPoint(P, c.colors.vecC, 'P');
+
+            const step1 = vscale(e1, c1);
+            const ctx = c.ctx;
+            const so = c.toS({x:0,y:0}), ss1 = c.toS(step1), sp = c.toS(P);
+
+            ctx.strokeStyle = c.colors.vecA + '88'; ctx.lineWidth = 2;
+            ctx.setLineDash([5,3]);
+            ctx.beginPath(); ctx.moveTo(so.x, so.y); ctx.lineTo(ss1.x, ss1.y); ctx.stroke();
+
+            ctx.strokeStyle = c.colors.vecB + '88';
+            ctx.beginPath(); ctx.moveTo(ss1.x, ss1.y); ctx.lineTo(sp.x, sp.y); ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = c.colors.vecA; ctx.font = 'bold 12px Consolas, monospace';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+            const mid1 = c.toS(vscale(step1, 0.5));
+            ctx.fillText(`c₁=${c1}`, mid1.x, mid1.y - 6);
+
+            ctx.fillStyle = c.colors.vecB;
+            const mid2 = c.toS(vadd(step1, vscale(e2, c2 * 0.5)));
+            ctx.fillText(`c₂=${c2}`, mid2.x + 10, mid2.y);
+
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 13px "Noto Sans KR", sans-serif';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+            ctx.fillText(`P = ${c1}·e₁ + ${c2}·e₂ → c₁ = ${answer}`, 140, 254);
+        },
+        explain: `기저 좌표: $P = c_1 \\vec{e_1} + c_2 \\vec{e_2}$를 역행렬로 풀면<br>$c_1 = \\frac{e_{2y} P_x - e_{2x} P_y}{\\det} = \\frac{(${e2.y})(${P.x}) - (${e2.x})(${P.y})}{${det}} = $ <span class="val">${answer}</span>.<br>노란 점선이 $c_1 \\vec{e_1}$, 파란 점선이 $c_2 \\vec{e_2}$ 방향 성분입니다.`
+    };
+});
+
+// ============================================================
+//  HTML 렌더링
+// ============================================================
+function renderProblems() {
+    const container = document.getElementById('problems');
+    container.innerHTML = '';
+    const banner = document.getElementById('scoreBanner');
+    banner.style.display = 'none';
+    banner.className = 'score-banner';
+
+    problems.forEach((p, i) => {
+        const card = document.createElement('div');
+        card.className = 'problem-card';
+        card.id = `card-${i}`;
+        card.innerHTML = `
+            <div class="problem-num">Q${p.num}</div>
+            <div class="problem-title">${p.title}</div>
+            <div class="problem-body">${p.body}</div>
+            <div class="answer-row">
+                <label for="ans-${i}">답:</label>
+                <input type="text" class="answer-input" id="ans-${i}" autocomplete="off" inputmode="decimal">
+                <span class="result-icon" id="icon-${i}"></span>
+            </div>
+            <div class="feedback" id="fb-${i}">
+                <div id="fb-content-${i}"></div>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+
+    if (window.MathJax && MathJax.typesetPromise) {
+        MathJax.typesetPromise([container]);
+    }
+}
+
+// ============================================================
+//  생성
+// ============================================================
+function generateAll() {
+    problems = generators.map(g => g());
+    renderProblems();
+    const first = document.getElementById('ans-0');
+    if (first) first.focus();
+}
+
+// ============================================================
+//  채점
+// ============================================================
+function grade() {
+    let correct = 0;
+
+    problems.forEach((p, i) => {
+        const input = document.getElementById(`ans-${i}`);
+        const card = document.getElementById(`card-${i}`);
+        const icon = document.getElementById(`icon-${i}`);
+        const fb = document.getElementById(`fb-${i}`);
+        const fbContent = document.getElementById(`fb-content-${i}`);
+
+        const userVal = parseFloat(input.value);
+        const isCorrect = !isNaN(userVal) && Math.abs(userVal - p.answer) <= p.epsilon;
+
+        card.classList.remove('correct', 'wrong');
+        card.classList.add(isCorrect ? 'correct' : 'wrong');
+
+        input.classList.remove('correct-input', 'wrong-input');
+        input.classList.add(isCorrect ? 'correct-input' : 'wrong-input');
+
+        icon.className = 'result-icon show';
+        icon.textContent = isCorrect ? '\u2705' : '\u274C';
+
+        fbContent.innerHTML = '';
+        if (isCorrect) {
+            correct++;
+            fb.className = 'feedback show correct-fb';
+            fbContent.innerHTML = `
+                <div class="feedback-correct">정답!</div>
+                <canvas id="cvsFb-${i}" width="280" height="280" style="border-radius:10px;"></canvas>
+                <div class="explain-text">${p.explain}</div>
+            `;
+            requestAnimationFrame(() => {
+                if (p.drawWrong) p.drawWrong(`cvsFb-${i}`, userVal);
+                if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([fbContent]);
+            });
+        } else {
+            fb.className = 'feedback show';
+            const wrongLabel = isNaN(userVal) ? '입력 없음' : userVal;
+            fbContent.innerHTML = `
+                <div class="feedback-wrong">오답 (입력: ${wrongLabel}, 정답: ${p.answer})</div>
+                <canvas id="cvsFb-${i}" width="280" height="280" style="border-radius:10px;"></canvas>
+                <div class="explain-text">${p.explain}</div>
+            `;
+
+            requestAnimationFrame(() => {
+                if (p.drawWrong) {
+                    p.drawWrong(`cvsFb-${i}`, userVal);
+                }
+                if (window.MathJax && MathJax.typesetPromise) {
+                    MathJax.typesetPromise([fbContent]);
+                }
+            });
+        }
+    });
+
+    const banner = document.getElementById('scoreBanner');
+    banner.style.display = 'block';
+    const total = problems.length;
+    banner.textContent = `${correct} / ${total} 점`;
+    banner.className = 'score-banner';
+    if (correct === total) {
+        banner.classList.add('perfect');
+        banner.textContent += ' — 만점이야!';
+    } else if (correct >= total / 2) {
+        banner.classList.add('good');
+        banner.textContent += ' — 좀 더 연습하면 완벽!';
+    } else {
+        banner.classList.add('bad');
+        banner.textContent += ' — 오답노트를 꼼꼼히 보자!';
+    }
+
+    for (let i = 0; i < problems.length; i++) {
+        const card = document.getElementById(`card-${i}`);
+        if (card.classList.contains('wrong')) {
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            break;
+        }
+    }
+}
+
+// ============================================================
+//  Enter키 → 다음 문제로 이동
+// ============================================================
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        const active = document.activeElement;
+        if (active && active.classList.contains('answer-input')) {
+            const match = active.id.match(/ans-(\d+)/);
+            if (match) {
+                const idx = parseInt(match[1]);
+                if (idx < problems.length - 1) {
+                    document.getElementById(`ans-${idx + 1}`).focus();
+                } else {
+                    grade();
+                }
+            }
+        }
+    }
+});
+
+// ============================================================
+//  초기화
+// ============================================================
+generateAll();
+  </script>
+</body>
+</html>

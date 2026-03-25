@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 2 — 극좌표·삼각함수·복소 회전 | MyAcademy</title>
+    <link rel="stylesheet" href="style.css">
+    <script>
+    MathJax = { tex: { inlineMath: [['$','$']], displayMath: [['$$','$$']] }, svg: { fontCache: 'global' } };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+    <style>
+        .t-slider-row { display:flex; align-items:center; gap:1rem; margin-top:0.75rem; font-size:0.9rem; }
+        .t-slider-row input[type="range"] { flex:1; max-width:300px; accent-color:var(--accent); }
+        .t-slider-row .t-val { font-family:var(--font-code); font-weight:700; color:var(--accent); min-width:3.5rem; }
+        .cmp-table { width:100%; border-collapse:collapse; margin:1rem 0; font-size:0.9rem; }
+        .cmp-table th, .cmp-table td { padding:0.6rem 0.8rem; border:1px solid var(--border); text-align:center; }
+        .cmp-table th { background:rgba(171,107,219,0.08); color:var(--accent); font-weight:600; font-size:0.8rem; letter-spacing:0.05em; }
+        .cmp-table td:first-child { text-align:left; font-weight:600; color:var(--text-secondary); font-size:0.85rem; }
+        .special-btn { display:inline-block; font-size:0.78rem; padding:0.25rem 0.6rem; background:var(--bg-surface); border:1px solid var(--border); border-radius:4px; cursor:pointer; color:var(--text-primary); font-family:inherit; transition:all 0.2s; margin:0.15rem; }
+        .special-btn:hover, .special-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+    </style>
+</head>
+<body>
+  <header class="header">
+    <button class="hamburger" id="hamburger" aria-label="메뉴"><span></span><span></span><span></span></button>
+    <div class="header-logo">MyAcademy<span class="subtitle">선형대수 × 그래픽스 × AI</span></div>
+    <button class="theme-toggle" id="themeToggle" aria-label="테마 전환"><span class="theme-toggle-icon"></span></button>
+  </header>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <nav class="sidebar" id="sidebar"></nav>
+
+  <main class="main-content">
+    <div class="content">
+      <div class="page-title">
+        <div class="tag tag-supplement">SUPPLEMENT</div>
+        <h1>극좌표·삼각함수·복소 회전</h1>
+        <p class="page-desc">회전 행렬이 <strong>왜</strong> 저 모양인지, 복소수 곱셈이 <strong>왜</strong> 회전인지</p>
+      </div>
+
+      <!-- ══════════════════════════════════════════ -->
+      <!--  1. 극좌표계                                -->
+      <!-- ══════════════════════════════════════════ -->
+      <section>
+        <h2 id="polar">극좌표계 — 거리와 각도로 위치를 말한다</h2>
+        <p>
+          직교 좌표 $(x, y)$는 "오른쪽으로 $x$, 위로 $y$" — 격자 사고.
+          극좌표 $(r, \theta)$는 "원점에서 $r$만큼, $\theta$ 방향으로" — 레이더 사고.
+        </p>
+        <div class="formula-box">
+          $$x = r\cos\theta, \quad y = r\sin\theta$$
+          $$r = \sqrt{x^2 + y^2}, \quad \theta = \text{atan2}(y, x)$$
+        </div>
+        <div class="interactive-section">
+          <div class="canvas-wrap">
+            <canvas id="cvsPolar" width="600" height="600"></canvas>
+          </div>
+          <div class="math-panel">
+            <h3>좌표 변환</h3>
+            <div class="calc-group">
+              <div class="label">직교 좌표 (x, y)</div>
+              <div class="calc-row" id="polarXY"></div>
+            </div>
+            <div class="calc-group">
+              <div class="label">극좌표 (r, θ)</div>
+              <div class="calc-row" id="polarRT"></div>
+            </div>
+            <div class="calc-group" style="padding-top:0.8rem;border-top:1px solid var(--border);">
+              <div class="label">변환 과정</div>
+              <div class="calc-row" id="polarConv" style="line-height:1.8;"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════ -->
+      <!--  2. 삼각함수 — 단위원                        -->
+      <!-- ══════════════════════════════════════════ -->
+      <section>
+        <h2 id="trig">삼각함수 — 단위원 위의 좌표</h2>
+        <p>
+          단위원($r = 1$) 위의 점 = $(\cos\theta, \sin\theta)$.
+          삼각함수는 <strong>"각도를 좌표로 바꾸는 함수"</strong>다.
+        </p>
+        <div class="formula-box">
+          $$\sin^2\theta + \cos^2\theta = 1$$
+          <p class="note">증명이 아니라 정의에서 바로 나온다 — 단위원 위의 점이면 $x^2 + y^2 = 1$이니까.</p>
+        </div>
+        <div class="interactive-section">
+          <div class="canvas-wrap">
+            <canvas id="cvsUnit" width="600" height="600"></canvas>
+          </div>
+          <div class="math-panel">
+            <h3>단위원 위의 점</h3>
+            <div class="calc-group">
+              <div class="label">각도</div>
+              <div class="calc-row" id="unitTheta"></div>
+            </div>
+            <div class="calc-group">
+              <div class="label">cos θ (x 좌표)</div>
+              <div class="calc-row" id="unitCos"></div>
+            </div>
+            <div class="calc-group">
+              <div class="label">sin θ (y 좌표)</div>
+              <div class="calc-row" id="unitSin"></div>
+            </div>
+            <div class="calc-group" style="padding-top:0.8rem;border-top:1px solid var(--border);">
+              <div class="label">피타고라스 항등식</div>
+              <div class="calc-row" id="unitPythag"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════ -->
+      <!--  3. 덧셈정리 → 회전 행렬                     -->
+      <!-- ══════════════════════════════════════════ -->
+      <section class="concept-intro">
+        <h2 id="rotation-derive">덧셈정리 → 회전 행렬</h2>
+
+        <h3>핵심 공식 — 덧셈정리</h3>
+        <div class="formula-box">
+          $$\cos(\alpha + \beta) = \cos\alpha\cos\beta - \sin\alpha\sin\beta$$
+          $$\sin(\alpha + \beta) = \sin\alpha\cos\beta + \cos\alpha\sin\beta$$
+        </div>
+        <p>이게 왜 중요하냐? <strong>"각도를 더한다 = 회전이다"</strong>이기 때문.</p>
+
+        <h3>유도</h3>
+        <p>점 $P = (r\cos\alpha,\; r\sin\alpha)$를 $\beta$만큼 회전하면, 새 각도가 $\alpha + \beta$이므로:</p>
+        <div class="formula-box">
+          $$x' = r\cos(\alpha+\beta) = x\cos\beta - y\sin\beta$$
+          $$y' = r\sin(\alpha+\beta) = x\sin\beta + y\cos\beta$$
+          <p style="margin-top:0.8rem;font-weight:600;color:var(--text-primary);">행렬로 정리:</p>
+          $$R(\beta) = \begin{bmatrix} \cos\beta & -\sin\beta \\ \sin\beta & \cos\beta \end{bmatrix}$$
+          <p class="note">외우는 게 아니라, 덧셈정리에서 자연스럽게 나온다.</p>
+        </div>
+
+        <div class="interactive-section">
+          <div class="canvas-wrap">
+            <canvas id="cvsRot" width="600" height="600"></canvas>
+            <div class="t-slider-row">
+              <span>β =</span>
+              <input type="range" id="betaSlider" min="-180" max="180" step="1" value="60">
+              <span class="t-val" id="betaVal">60°</span>
+            </div>
+          </div>
+          <div class="math-panel">
+            <h3>회전 적용</h3>
+            <div class="calc-group">
+              <div class="label">원래 벡터 v (α)</div>
+              <div class="calc-row" id="rotOrig"></div>
+            </div>
+            <div class="calc-group">
+              <div class="label">회전 행렬 R(β)</div>
+              <div class="calc-row" id="rotMat" style="line-height:1.8;"></div>
+            </div>
+            <div class="calc-group" style="padding-top:0.8rem;border-top:1px solid var(--border);">
+              <div class="label">x' = x cos β − y sin β</div>
+              <div class="calc-row" id="rotX"></div>
+            </div>
+            <div class="calc-group">
+              <div class="label">y' = x sin β + y cos β</div>
+              <div class="calc-row" id="rotY"></div>
+            </div>
+            <div class="calc-group" style="padding-top:0.8rem;border-top:1px solid var(--border);">
+              <div class="label">결과 v'</div>
+              <div class="calc-row" id="rotResult"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout">
+          <div class="callout-title">회전 행렬의 성질</div>
+          <p>열벡터가 직교 + 길이 1 → <strong>직교 행렬</strong>.
+             $\det R = \cos^2\beta + \sin^2\beta = 1$ → 넓이·방향 모두 보존.
+             $R^{-1} = R^T$ → 역행렬 = 전치. 역회전 = $R(-\beta)$.</p>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════ -->
+      <!--  4. 복소 평면                                -->
+      <!-- ══════════════════════════════════════════ -->
+      <section>
+        <h2 id="complex">복소 평면 — 곱셈이 곧 회전</h2>
+
+        <h3>복소수의 극형식</h3>
+        <div class="formula-box">
+          $$z = x + iy = r(\cos\theta + i\sin\theta) = re^{i\theta}$$
+        </div>
+        <p>복소 평면에서 실수축 = $x$, 허수축 = $y$. 복소수 하나 = 2D 점 하나.</p>
+
+        <h3>곱셈의 기하학</h3>
+        <div class="formula-box">
+          $$z_1 \cdot z_2 = r_1 r_2 \cdot e^{i(\theta_1 + \theta_2)}$$
+          <p class="note"><strong>크기는 곱해지고, 각도는 더해진다.</strong> $|z_2| = 1$이면 순수한 회전!</p>
+        </div>
+
+        <div class="interactive-section">
+          <div class="canvas-wrap">
+            <canvas id="cvsComplex" width="600" height="600"></canvas>
+          </div>
+          <div class="math-panel">
+            <h3>복소수 곱셈</h3>
+            <div class="calc-group">
+              <div class="label">z₁ (골드)</div>
+              <div class="calc-row" id="cplxZ1"></div>
+            </div>
+            <div class="calc-group">
+              <div class="label">z₂ (시안)</div>
+              <div class="calc-row" id="cplxZ2"></div>
+            </div>
+            <div class="calc-group" style="padding-top:0.8rem;border-top:1px solid var(--border);">
+              <div class="label">z₁ · z₂ (그린)</div>
+              <div class="calc-row" id="cplxProduct"></div>
+            </div>
+            <div class="calc-group" style="padding-top:0.8rem;border-top:1px solid var(--border);">
+              <div class="label">검증</div>
+              <div class="calc-row" id="cplxVerify" style="line-height:1.8;"></div>
+            </div>
+          </div>
+        </div>
+
+        <h3>행렬 vs 복소수 — 같은 회전, 다른 언어</h3>
+        <table class="cmp-table">
+          <thead>
+            <tr><th></th><th>행렬 표현</th><th>복소수 표현</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>β만큼 회전</td><td>$R(\beta) \cdot \vec{v}$</td><td>$e^{i\beta} \cdot z$</td></tr>
+            <tr><td>합성</td><td>$R(\alpha) R(\beta)$</td><td>$e^{i\alpha} \cdot e^{i\beta}$</td></tr>
+            <tr><td>역회전</td><td>$R^T$</td><td>$e^{-i\beta}$ (켤레)</td></tr>
+            <tr><td>항등</td><td>$I$</td><td>$1$</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout">
+          <div class="callout-title">2D를 넘어서 — Phase 4 예고</div>
+          <p style="margin-bottom:0;">복소수는 2D에서만 작동한다. 3D 회전은? 복소수를 확장한 <strong>쿼터니언</strong> $q = w + xi + yj + zk$가 필요하다.
+          복소수에서 "$i$를 곱하면 90° 회전"이듯, 쿼터니언에서는 "$q$를 곱하면 임의의 3D 축 회전"이 된다.</p>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════ -->
+      <!--  5. 직접 해보기                              -->
+      <!-- ══════════════════════════════════════════ -->
+      <section class="exercises">
+        <h2 id="exercises">직접 해보기</h2>
+        <ol>
+          <li><strong>극좌표 읽기:</strong> 극좌표 탐색기에서 점 (3, 4)를 찾아봐. $r$과 $\theta$는?</li>
+          <li><strong>회전 확인:</strong> 회전 캔버스에서 벡터 (1, 0)을 90°만큼 회전. 결과가 (0, 1)인지 확인.</li>
+          <li><strong>회전 행렬 유도:</strong> 벡터 (3, 1)을 45°만큼 회전한 결과를, 행렬 곱으로 직접 계산하고 캔버스와 비교.</li>
+          <li><strong>복소수 곱셈:</strong> $z_1 = 1+i$, $z_2 = i$일 때 $z_1 z_2$는? 캔버스에서 확인하고, "$i$를 곱하면 90° 회전"이 맞는지 체감.</li>
+          <li><strong>회전의 합성:</strong> 복소수 곱셈기에서 $z_2$를 단위원 위에 놓고(크기≈1), 여러 각도로 바꿔봐. "곱셈 = 회전"을 체감.</li>
+        </ol>
+      </section>
+    </div>
+
+    <div class="page-nav" id="page-nav"></div>
+
+    <script>
+    var PAGE_ID = "p2_02";
+    var ON_THIS_PAGE = [
+      { id: "polar", label: "극좌표계" },
+      { id: "trig", label: "삼각함수 & 단위원" },
+      { id: "rotation-derive", label: "덧셈정리 → 회전 행렬" },
+      { id: "complex", label: "복소 평면" },
+      { id: "exercises", label: "직접 해보기" }
+    ];
+    </script>
+    <script src="nav.js"></script>
+  </main>
+
+  <script src="canvas-lib.js"></script>
+  <script>
+// ============================================================
+//  공통 유틸
+// ============================================================
+var DEG = 180 / Math.PI;
+var RAD = Math.PI / 180;
+function fmt(n, d) { return n.toFixed(d === undefined ? 2 : d); }
+
+// ============================================================
+//  캔버스 1 — 극좌표 탐색기
+// ============================================================
+(function() {
+    var c = createCanvas('cvsPolar', { width: 600, height: 600, unit: 50 });
+    var P = { x: 3, y: 4 };
+
+    var drag = c.makeDraggable([
+        { id: 'P', get: function(){ return P; }, set: function(v){ P = v; }, color: c.colors.vecC }
+    ], render);
+
+    function render() {
+        c.clear(); c.drawGrid();
+        var ctx = c.ctx;
+        var r = mag(P);
+        var theta = Math.atan2(P.y, P.x);
+        var deg = theta * DEG;
+
+        // 반지름 r 원 (점선)
+        if (r > 0.15) {
+            var o = c.toS({x:0,y:0});
+            ctx.strokeStyle = 'rgba(131,193,103,0.18)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([6, 4]);
+            ctx.beginPath();
+            ctx.arc(o.x, o.y, r * c.UNIT, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        // x축 투영 (골드 점선)
+        if (Math.abs(P.x) > 0.05) {
+            c.drawDashed({x:0,y:0}, {x:P.x,y:0}, c.colors.vecA, 2.5, [6,3]);
+        }
+        // y축 투영 (시안 점선)
+        if (Math.abs(P.y) > 0.05) {
+            c.drawDashed({x:0,y:0}, {x:0,y:P.y}, c.colors.vecB, 2.5, [6,3]);
+        }
+        // 수선 (P → x축, P → y축)
+        c.drawDashed(P, {x:P.x,y:0}, 'rgba(200,200,220,0.25)', 1, [4,3]);
+        c.drawDashed(P, {x:0,y:P.y}, 'rgba(200,200,220,0.25)', 1, [4,3]);
+
+        // r 벡터 (그린)
+        c.drawVectorFrom({x:0,y:0}, P, c.colors.vecC, 'P');
+
+        // θ 호
+        if (r > 0.3) {
+            c.drawAngleArc({x:1,y:0}, P, 'θ');
+        }
+
+        // 축 투영 레이블
+        if (Math.abs(P.x) > 0.5) {
+            var mx = c.toS({x:P.x/2, y:0});
+            ctx.fillStyle = c.colors.vecA;
+            ctx.font = 'bold 12px "Cascadia Code",Consolas,monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = P.y >= 0 ? 'top' : 'bottom';
+            ctx.fillText('r cos θ', mx.x, mx.y + (P.y >= 0 ? 8 : -8));
+        }
+        if (Math.abs(P.y) > 0.5) {
+            var my = c.toS({x:0, y:P.y/2});
+            ctx.fillStyle = c.colors.vecB;
+            ctx.font = 'bold 12px "Cascadia Code",Consolas,monospace';
+            ctx.textAlign = P.x >= 0 ? 'right' : 'left';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('r sin θ', my.x + (P.x >= 0 ? -8 : 8), my.y);
+        }
+
+        // 핸들
+        c.drawHandle(P, c.colors.vecC, drag.isHovered('P'));
+
+        // 패널
+        document.getElementById('polarXY').innerHTML =
+            '(<span class="va">' + fmt(P.x) + '</span>, <span class="vb">' + fmt(P.y) + '</span>)';
+        document.getElementById('polarRT').innerHTML =
+            '(<span class="vc">' + fmt(r) + '</span>, <span style="color:var(--accent)">' + fmt(deg,1) + '°</span>)';
+        document.getElementById('polarConv').innerHTML =
+            'x = r cos θ = <span class="vc">' + fmt(r) + '</span> × ' + fmt(Math.cos(theta),3) +
+            ' = <span class="va">' + fmt(r * Math.cos(theta)) + '</span><br>' +
+            'y = r sin θ = <span class="vc">' + fmt(r) + '</span> × ' + fmt(Math.sin(theta),3) +
+            ' = <span class="vb">' + fmt(r * Math.sin(theta)) + '</span>';
+    }
+    render();
+})();
+
+// ============================================================
+//  캔버스 2 — 단위원과 삼각함수
+// ============================================================
+(function() {
+    var c = createCanvas('cvsUnit', { width: 600, height: 600, unit: 140 });
+    var Q = { x: Math.cos(30 * RAD), y: Math.sin(30 * RAD) }; // 30°
+
+    var drag = c.makeDraggable([
+        { id: 'Q', get: function(){ return Q; }, set: function(v){
+            var m = mag(v);
+            if (m > 0.01) { Q.x = v.x/m; Q.y = v.y/m; }
+        }, color: c.colors.accent }
+    ], render, { clamp: 1.8 });
+
+    function render() {
+        c.clear(); c.drawGrid();
+        var ctx = c.ctx;
+        var o = c.toS({x:0,y:0});
+        var theta = Math.atan2(Q.y, Q.x);
+        var deg = theta * DEG;
+        var cosV = Math.cos(theta);
+        var sinV = Math.sin(theta);
+
+        // 단위원
+        ctx.strokeStyle = 'rgba(171,107,219,0.25)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(o.x, o.y, c.UNIT, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // cos θ 투영 (골드): 원점 → (cosθ, 0) 실선
+        var cosEnd = c.toS({x:cosV, y:0});
+        ctx.strokeStyle = c.colors.vecA; ctx.lineWidth = 4; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(o.x, o.y); ctx.lineTo(cosEnd.x, cosEnd.y); ctx.stroke();
+
+        // sin θ 투영 (시안): 원점 → (0, sinθ) 실선
+        var sinEnd = c.toS({x:0, y:sinV});
+        ctx.strokeStyle = c.colors.vecB; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.moveTo(o.x, o.y); ctx.lineTo(sinEnd.x, sinEnd.y); ctx.stroke();
+
+        // Q에서 축으로 수선 (점선)
+        var qs = c.toS(Q);
+        ctx.strokeStyle = 'rgba(200,200,220,0.3)'; ctx.lineWidth = 1;
+        ctx.setLineDash([5, 3]);
+        ctx.beginPath(); ctx.moveTo(qs.x, qs.y); ctx.lineTo(cosEnd.x, cosEnd.y); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(qs.x, qs.y); ctx.lineTo(sinEnd.x, sinEnd.y); ctx.stroke();
+        ctx.setLineDash([]);
+
+        // 원점 → Q 반지름 (연한 회색)
+        ctx.strokeStyle = 'rgba(200,200,220,0.35)'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(o.x, o.y); ctx.lineTo(qs.x, qs.y); ctx.stroke();
+
+        // θ 호
+        c.drawAngleArc({x:1,y:0}, Q, 'θ');
+
+        // 축 레이블
+        ctx.font = 'bold 13px "Cascadia Code",Consolas,monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillStyle = c.colors.vecA;
+        ctx.fillText('cos θ', (o.x + cosEnd.x) / 2, o.y + 8);
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = c.colors.vecB;
+        ctx.fillText('sin θ', o.x - 8, (o.y + sinEnd.y) / 2);
+
+        // Q 점
+        ctx.beginPath(); ctx.arc(qs.x, qs.y, 7, 0, Math.PI * 2);
+        ctx.fillStyle = c.colors.accent; ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 1.5; ctx.stroke();
+
+        // 핸들
+        c.drawHandle(Q, c.colors.accent, drag.isHovered('Q'));
+
+        // 패널
+        document.getElementById('unitTheta').innerHTML =
+            '<span style="color:var(--accent)">' + fmt(deg,1) + '°</span> (' + fmt(theta,3) + ' rad)';
+        document.getElementById('unitCos').innerHTML =
+            '<span class="va">' + fmt(cosV, 4) + '</span>';
+        document.getElementById('unitSin').innerHTML =
+            '<span class="vb">' + fmt(sinV, 4) + '</span>';
+        var c2 = cosV * cosV, s2 = sinV * sinV;
+        document.getElementById('unitPythag').innerHTML =
+            '<span class="va">' + fmt(c2, 4) + '</span> + <span class="vb">' + fmt(s2, 4) +
+            '</span> = <span class="vc">' + fmt(c2 + s2, 4) + '</span> ✓';
+    }
+    render();
+})();
+
+// ============================================================
+//  캔버스 3 — 회전 = 덧셈정리
+// ============================================================
+(function() {
+    var c = createCanvas('cvsRot', { width: 600, height: 600, unit: 50 });
+    var V = { x: 3, y: 1 };
+    var beta = 60; // degrees
+
+    var drag = c.makeDraggable([
+        { id: 'V', get: function(){ return V; }, set: function(v){ V = v; }, color: c.colors.vecA }
+    ], render);
+
+    var slider = document.getElementById('betaSlider');
+    var valEl = document.getElementById('betaVal');
+    slider.addEventListener('input', function(e) {
+        beta = parseInt(e.target.value);
+        valEl.textContent = beta + '°';
+        render();
+    });
+
+    function render() {
+        c.clear(); c.drawGrid();
+        var ctx = c.ctx;
+        var bRad = beta * RAD;
+        var cosB = Math.cos(bRad), sinB = Math.sin(bRad);
+
+        // 회전된 벡터
+        var Vp = { x: V.x * cosB - V.y * sinB, y: V.x * sinB + V.y * cosB };
+
+        // 원래 벡터의 r로 원호 (점선)
+        var r = mag(V);
+        if (r > 0.2) {
+            var o = c.toS({x:0,y:0});
+            ctx.strokeStyle = 'rgba(200,200,220,0.12)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 4]);
+            ctx.beginPath();
+            ctx.arc(o.x, o.y, r * c.UNIT, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        // α 호 (원래 벡터의 각도)
+        if (r > 0.3) {
+            var alphaRef = {x:1,y:0};
+            // α 호 (연한)
+            ctx.save();
+            var oo = c.toS({x:0,y:0});
+            var angAlpha = Math.atan2(-V.y * c.UNIT, V.x * c.UNIT); // screen space Y flipped
+            ctx.strokeStyle = 'rgba(232,200,64,0.3)'; ctx.lineWidth = 1.5;
+            var arcR = 28;
+            ctx.beginPath();
+            ctx.arc(oo.x, oo.y, arcR, 0, angAlpha, V.y < 0);
+            ctx.stroke();
+            // α 레이블
+            var aMid = Math.atan2(V.y, V.x) / 2;
+            ctx.fillStyle = 'rgba(232,200,64,0.5)';
+            ctx.font = 'italic 12px serif';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText('α', oo.x + Math.cos(aMid) * (arcR + 12), oo.y - Math.sin(aMid) * (arcR + 12));
+            ctx.restore();
+
+            // β 호 (V에서 Vp까지)
+            c.drawAngleArc(V, Vp, 'β');
+        }
+
+        // 원래 벡터 (골드, 약간 투명)
+        c.drawVector(V, c.colors.vecA, 'v');
+        // 회전된 벡터 (시안)
+        c.drawVector(Vp, c.colors.vecB, "v'");
+
+        // 핸들
+        c.drawHandle(V, c.colors.vecA, drag.isHovered('V'));
+
+        // 패널
+        var alpha = Math.atan2(V.y, V.x) * DEG;
+        document.getElementById('rotOrig').innerHTML =
+            '<span class="va">(' + fmt(V.x) + ', ' + fmt(V.y) + ')</span>' +
+            '  |v| = ' + fmt(r) + ',  α = ' + fmt(alpha,1) + '°';
+
+        document.getElementById('rotMat').innerHTML =
+            '[ <span class="va">' + fmt(cosB,3) + '</span>  <span class="vb">' + fmt(-sinB,3) + '</span> ]<br>' +
+            '[ <span class="va">' + fmt(sinB,3) + '</span>  <span class="vb">' + fmt(cosB,3) + '</span> ]';
+
+        var term1x = V.x * cosB, term2x = V.y * sinB;
+        document.getElementById('rotX').innerHTML =
+            fmt(V.x) + ' × ' + fmt(cosB,3) + ' − ' + fmt(V.y) + ' × ' + fmt(sinB,3) +
+            ' = <span class="vb">' + fmt(Vp.x) + '</span>';
+
+        var term1y = V.x * sinB, term2y = V.y * cosB;
+        document.getElementById('rotY').innerHTML =
+            fmt(V.x) + ' × ' + fmt(sinB,3) + ' + ' + fmt(V.y) + ' × ' + fmt(cosB,3) +
+            ' = <span class="vb">' + fmt(Vp.y) + '</span>';
+
+        document.getElementById('rotResult').innerHTML =
+            "<span class=\"vb\">v' = (" + fmt(Vp.x) + ', ' + fmt(Vp.y) + ')</span>' +
+            '  |v\'| = ' + fmt(mag(Vp));
+    }
+    render();
+})();
+
+// ============================================================
+//  캔버스 4 — 복소수 곱셈기
+// ============================================================
+(function() {
+    var c = createCanvas('cvsComplex', { width: 600, height: 600, unit: 60 });
+    var z1 = { x: 2, y: 1 };  // 2 + i
+    var z2 = { x: 0, y: 1 };  // i  (곱하면 90° 회전!)
+
+    var drag = c.makeDraggable([
+        { id: 'z1', get: function(){ return z1; }, set: function(v){ z1 = v; }, color: c.colors.vecA },
+        { id: 'z2', get: function(){ return z2; }, set: function(v){ z2 = v; }, color: c.colors.vecB }
+    ], render);
+
+    function render() {
+        c.clear(); c.drawGrid();
+        var ctx = c.ctx;
+
+        // 곱셈: (x1+iy1)(x2+iy2) = (x1x2-y1y2) + i(x1y2+y1x2)
+        var zp = {
+            x: z1.x * z2.x - z1.y * z2.y,
+            y: z1.x * z2.y + z1.y * z2.x
+        };
+
+        var r1 = mag(z1), r2 = mag(z2), rp = mag(zp);
+        var t1 = Math.atan2(z1.y, z1.x);
+        var t2 = Math.atan2(z2.y, z2.x);
+        var tp = Math.atan2(zp.y, zp.x);
+
+        // θ₁ 호 (골드, 연한)
+        if (r1 > 0.2) {
+            var o = c.toS({x:0,y:0});
+            var angEnd1 = Math.atan2(-z1.y * c.UNIT, z1.x * c.UNIT);
+            ctx.strokeStyle = 'rgba(232,200,64,0.3)'; ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(o.x, o.y, 24, 0, angEnd1, z1.y < 0);
+            ctx.stroke();
+        }
+
+        // θ₁+θ₂ 호 (그린)
+        if (rp > 0.2) {
+            c.drawAngleArc({x:1,y:0}, zp, 'θ₁+θ₂');
+        }
+
+        // 단위원 참고선 (매우 연한)
+        var oo = c.toS({x:0,y:0});
+        ctx.strokeStyle = 'rgba(200,200,220,0.08)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(oo.x, oo.y, c.UNIT, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // 벡터 그리기
+        c.drawVector(z1, c.colors.vecA, 'z₁');
+        c.drawVector(z2, c.colors.vecB, 'z₂');
+        c.drawVector(zp, c.colors.vecC, 'z₁z₂');
+
+        // 핸들
+        c.drawHandle(z1, c.colors.vecA, drag.isHovered('z1'));
+        c.drawHandle(z2, c.colors.vecB, drag.isHovered('z2'));
+
+        // "회전 연산자" 레이블 (z₂ 근처)
+        if (Math.abs(r2 - 1) < 0.15) {
+            var zs = c.toS(z2);
+            ctx.fillStyle = c.colors.vecB;
+            ctx.font = '11px "Noto Sans KR",sans-serif';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+            ctx.fillText('← 회전 연산자 (|z₂|≈1)', zs.x, zs.y - 18);
+        }
+
+        // 패널
+        document.getElementById('cplxZ1').innerHTML =
+            '<span class="va">' + fmt(z1.x) + ' + ' + fmt(z1.y) + 'i</span>' +
+            ' = <span class="va">' + fmt(r1) + '</span> · e<sup>i·' + fmt(t1 * DEG,1) + '°</sup>';
+
+        document.getElementById('cplxZ2').innerHTML =
+            '<span class="vb">' + fmt(z2.x) + ' + ' + fmt(z2.y) + 'i</span>' +
+            ' = <span class="vb">' + fmt(r2) + '</span> · e<sup>i·' + fmt(t2 * DEG,1) + '°</sup>';
+
+        document.getElementById('cplxProduct').innerHTML =
+            '<span class="vc">' + fmt(zp.x) + ' + ' + fmt(zp.y) + 'i</span>' +
+            ' = <span class="vc">' + fmt(rp) + '</span> · e<sup>i·' + fmt(tp * DEG,1) + '°</sup>';
+
+        document.getElementById('cplxVerify').innerHTML =
+            '크기: <span class="va">' + fmt(r1) + '</span> × <span class="vb">' + fmt(r2) +
+            '</span> = <span class="vc">' + fmt(r1 * r2) + '</span> ' +
+            (Math.abs(r1 * r2 - rp) < 0.01 ? '✓' : '') + '<br>' +
+            '각도: <span class="va">' + fmt(t1 * DEG,1) + '°</span> + <span class="vb">' + fmt(t2 * DEG,1) +
+            '°</span> = <span class="vc">' + fmt((t1 + t2) * DEG,1) + '°</span> ' +
+            (Math.abs(((t1+t2)*DEG) - tp*DEG) < 1 ? '✓' : '');
+    }
+    render();
+})();
+  </script>
+</body>
+</html>

@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 2 — 역행렬 & 행렬식 | MyAcademy</title>
+    <link rel="stylesheet" href="style.css">
+    <script>
+    MathJax = { tex: { inlineMath: [['$','$']], displayMath: [['$$','$$']] }, svg: { fontCache: 'global' } };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+    <style>
+        .t-slider-row { display:flex; align-items:center; gap:1rem; margin-top:0.75rem; font-size:0.9rem; }
+        .t-slider-row input[type="range"] { flex:1; max-width:300px; accent-color:var(--accent); }
+        .t-slider-row .t-val { font-family:var(--font-code); font-weight:700; color:var(--accent); min-width:3rem; }
+        .mat-row { display:flex; align-items:center; gap:0.6rem; justify-content:center; margin:0.8rem 0; flex-wrap:wrap; }
+        .mat-box { display:grid; gap:0.3rem; padding:0.4rem 0.5rem; border-left:2.5px solid var(--text-secondary); border-right:2.5px solid var(--text-secondary); }
+        .mat-box.m2 { grid-template-columns:1fr 1fr; }
+        .mat-in { width:3.5rem; text-align:center; background:var(--bg-surface); border:1px solid var(--border); color:var(--text-primary); font-family:var(--font-code); font-size:0.95rem; padding:0.35rem; border-radius:4px; }
+        .mat-in:focus { border-color:var(--accent); outline:none; }
+        .preset-row { display:flex; gap:0.4rem; flex-wrap:wrap; margin-top:0.5rem; justify-content:center; }
+        .pbtn { font-size:0.78rem; padding:0.25rem 0.6rem; background:var(--bg-surface); border:1px solid var(--border); border-radius:4px; cursor:pointer; color:var(--text-primary); font-family:inherit; transition:all 0.2s; }
+        .pbtn:hover, .pbtn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+        .pbtn:disabled { opacity:0.4; cursor:not-allowed; }
+        .det-display { text-align:center; font-family:var(--font-code); font-size:0.95rem; margin-top:0.5rem; }
+        .inv-box { font-family:var(--font-code); font-size:0.88rem; line-height:1.6; text-align:center; padding:0.5rem; border-radius:6px; }
+        .warn-box { background:rgba(252,98,85,0.08); border:1px solid rgba(252,98,85,0.2); color:var(--negative); font-weight:600; text-align:center; padding:0.6rem; border-radius:8px; margin-top:0.5rem; font-size:0.9rem; }
+        .cmp-table { width:100%; border-collapse:collapse; margin:1rem 0; font-size:0.88rem; }
+        .cmp-table th, .cmp-table td { padding:0.5rem 0.6rem; border:1px solid var(--border); text-align:center; }
+        .cmp-table th { background:rgba(171,107,219,0.08); color:var(--accent); font-weight:600; font-size:0.78rem; }
+        .cmp-table td:first-child { text-align:left; font-weight:600; color:var(--text-secondary); }
+    </style>
+</head>
+<body>
+  <header class="header">
+    <button class="hamburger" id="hamburger" aria-label="메뉴"><span></span><span></span><span></span></button>
+    <div class="header-logo">MyAcademy<span class="subtitle">선형대수 × 그래픽스 × AI</span></div>
+    <button class="theme-toggle" id="themeToggle" aria-label="테마 전환"><span class="theme-toggle-icon"></span></button>
+  </header>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <nav class="sidebar" id="sidebar"></nav>
+
+  <main class="main-content">
+    <div class="content">
+      <div class="page-title">
+        <div class="tag tag-lesson">PHASE 2</div>
+        <h1>역행렬 & 행렬식</h1>
+        <p class="page-desc">행렬식 = 넓이 변화율, 역행렬 = 되감기. det = 0이면 정보가 사라진다.</p>
+      </div>
+
+      <!-- ══════════ 1. 행렬식 ══════════ -->
+      <section>
+        <h2 id="determinant">행렬식 — 넓이 변화율</h2>
+        <div class="formula-box">
+          $$\det \begin{bmatrix} a & b \\ c & d \end{bmatrix} = ad - bc$$
+          <p class="note">$|\det|$ = 넓이 배율. 부호 = 방향 보존(+) 또는 뒤집힘(−). 0 = 차원 축소.</p>
+        </div>
+        <div class="interactive-section">
+          <div class="canvas-wrap">
+            <canvas id="cvsDet" width="600" height="600"></canvas>
+            <div class="mat-row">
+              <span style="font-size:0.8rem;color:var(--text-secondary);">M =</span>
+              <div class="mat-box m2">
+                <input class="mat-in" id="ma" value="2" style="color:var(--vec-a);">
+                <input class="mat-in" id="mb" value="1" style="color:var(--vec-b);">
+                <input class="mat-in" id="mc" value="0" style="color:var(--vec-a);">
+                <input class="mat-in" id="md" value="3" style="color:var(--vec-b);">
+              </div>
+            </div>
+            <div class="t-slider-row">
+              <span>t =</span>
+              <input type="range" id="detSlider" min="0" max="1" step="0.01" value="1">
+              <span class="t-val" id="detTVal">1.00</span>
+              <button class="pbtn" id="detPlay">▶</button>
+            </div>
+            <div class="preset-row">
+              <button class="pbtn active" data-m="2,1,0,3">det=6</button>
+              <button class="pbtn" data-m="0,-1,1,0">회전 (det=1)</button>
+              <button class="pbtn" data-m="1,0,0,-1">반사 (det=−1)</button>
+              <button class="pbtn" data-m="1,2,0.5,1">rank 1 (det=0)</button>
+              <button class="pbtn" data-m="0,0,0,0">rank 0</button>
+            </div>
+          </div>
+          <div class="math-panel">
+            <h3>행렬식 분석</h3>
+            <div class="calc-group">
+              <div class="label">det = ad − bc</div>
+              <div class="calc-row" id="detCalc"></div>
+            </div>
+            <div class="det-display" id="detDisp"></div>
+            <div class="calc-group" style="margin-top:1rem;padding-top:0.8rem;border-top:1px solid var(--border);">
+              <div class="label">1열 = e₁이 가는 곳</div>
+              <div class="calc-row" id="detCol1"></div>
+            </div>
+            <div class="calc-group">
+              <div class="label">2열 = e₂가 가는 곳</div>
+              <div class="calc-row" id="detCol2"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ 2. det 성질 ══════════ -->
+      <section>
+        <h2 id="det-props">det의 곱셈 성질</h2>
+        <div class="formula-box">
+          $$\det(AB) = \det A \cdot \det B$$
+          <p class="note">A가 넓이를 3배, B가 2배 → AB는 6배. 기하학적으로 당연.</p>
+        </div>
+        <table class="cmp-table">
+          <thead><tr><th>성질</th><th>이유</th></tr></thead>
+          <tbody>
+            <tr><td>$\det(A^{-1}) = 1/\det A$</td><td>되감으면 원래 넓이로</td></tr>
+            <tr><td>$\det R = 1$ (회전)</td><td>넓이 보존</td></tr>
+            <tr><td>$\det F = -1$ (반사)</td><td>넓이 보존 + 뒤집힘</td></tr>
+            <tr><td>$\det(sI) = s^2$ (균등 스케일)</td><td>변 $s$배 → 넓이 $s^2$배</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ══════════ 3. 역행렬 ══════════ -->
+      <section>
+        <h2 id="inverse">역행렬 — 변환을 되감는다</h2>
+        <div class="formula-box">
+          $$M^{-1} = \frac{1}{\det M} \begin{bmatrix} d & -b \\ -c & a \end{bmatrix}$$
+          <p class="note">$\frac{1}{\det}$ = 넓이 되돌림. $a \leftrightarrow d$ 교환, $b,c$ 부호 반전 = 방향 되돌림.</p>
+        </div>
+        <div class="interactive-section">
+          <div class="canvas-wrap">
+            <canvas id="cvsInv" width="600" height="600"></canvas>
+            <div class="t-slider-row">
+              <span>t =</span>
+              <input type="range" id="invSlider" min="0" max="1" step="0.01" value="0">
+              <span class="t-val" id="invTVal">0.00</span>
+              <button class="pbtn" id="invFwd">정방향 ▶</button>
+              <button class="pbtn" id="invRev">되감기 ◀</button>
+            </div>
+          </div>
+          <div class="math-panel">
+            <h3>역변환</h3>
+            <div class="calc-group">
+              <div class="label">M</div>
+              <div class="calc-row" id="invM"></div>
+            </div>
+            <div class="calc-group">
+              <div class="label">M⁻¹</div>
+              <div class="calc-row" id="invMinv"></div>
+            </div>
+            <div class="calc-group" style="padding-top:0.8rem;border-top:1px solid var(--border);">
+              <div class="label">현재 상태</div>
+              <div class="calc-row" id="invState"></div>
+            </div>
+            <div class="calc-group" style="padding-top:0.8rem;border-top:1px solid var(--border);">
+              <div class="label">M⁻¹ · M = I 검증</div>
+              <div class="calc-row" id="invVerify"></div>
+            </div>
+            <div id="invWarn" style="display:none;" class="warn-box">det = 0 — 되감기 불가!</div>
+          </div>
+        </div>
+        <div class="callout">
+          <div class="callout-title">det = 0이면 왜 되감기 불가?</div>
+          <p style="margin-bottom:0;">2D → 1D로 찌그러뜨린 변환은 되돌릴 수 없다. 직선 위의 점이 원래 2D의 어디에 있었는지 알 수 없으니까 — <strong>여러 입력이 같은 출력으로 갔으므로 원래 위치를 특정 불가</strong>. 이것이 "정보 소실"이다.</p>
+        </div>
+      </section>
+
+      <!-- ══════════ 3.5 차원 축소 ══════════ -->
+      <section>
+        <h2 id="singular">차원 축소 — det = 0의 세계</h2>
+        <div class="formula-box">
+          $$\det M = 0 \iff \text{열벡터가 일직선 (선형 종속)}$$
+          <p class="note">2D 공간이 1D 직선 또는 0D 점으로 붕괴. <strong>클릭</strong>해서 "원래 어디에 있었나" 확인.</p>
+        </div>
+        <div class="interactive-section">
+          <div class="canvas-wrap">
+            <canvas id="cvsSing" width="600" height="600"></canvas>
+            <div class="preset-row" style="justify-content:center;margin-top:0.5rem;">
+              <button class="pbtn sing-pre active" data-m="1,2,0.5,1">rank 1 (직선)</button>
+              <button class="pbtn sing-pre" data-m="2,4,1,2">rank 1 (가파른)</button>
+              <button class="pbtn sing-pre" data-m="0,0,0,0">rank 0 (점)</button>
+            </div>
+            <p style="text-align:center;font-size:0.82rem;color:var(--text-secondary);margin-top:0.4rem;" id="singHint">변환된 공간(직선) 위를 <strong>클릭</strong>하면 원래 위치 후보를 보여줍니다</p>
+          </div>
+          <div class="math-panel">
+            <h3>정보 소실</h3>
+            <div class="calc-group">
+              <div class="label">행렬 (det = 0)</div>
+              <div class="calc-row" id="singMat"></div>
+            </div>
+            <div class="calc-group">
+              <div class="label">클릭한 점의 원상(pre-image)</div>
+              <div class="calc-row" id="singPreimg" style="line-height:1.8;">클릭 전</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ 4. 연립방정식 ══════════ -->
+      <section>
+        <h2 id="linear-system">연립방정식과의 연결</h2>
+        <div class="formula-box">
+          <p style="font-weight:600;color:var(--text-primary);">$M\vec{x} = \vec{b}$ → "변환 M을 거쳤더니 b가 나왔다. 원래 x는?"</p>
+          <p class="note">$\det \neq 0$: $\vec{x} = M^{-1}\vec{b}$ (유일한 해). &nbsp; $\det = 0$: 해 없음 또는 무한 해.</p>
+        </div>
+        <div class="callout">
+          <div class="callout-title">연립방정식의 "0 = 0" vs "0 = 5"</div>
+          <p style="margin-bottom:0;">det = 0일 때, $\vec{b}$가 축소된 공간 위에 있으면 무한 해 ("0 = 0"), 밖에 있으면 해 없음 ("0 = 5").</p>
+        </div>
+      </section>
+
+      <!-- ══════════ 5. 특수 행렬 역행렬 ══════════ -->
+      <section>
+        <h2 id="special-inverse">특수 행렬의 역행렬</h2>
+        <table class="cmp-table">
+          <thead><tr><th>변환</th><th>$M^{-1}$</th><th>특징</th></tr></thead>
+          <tbody>
+            <tr><td>회전 $R(\theta)$</td><td>$R(-\theta) = R^T$</td><td>전치 = 역행렬</td></tr>
+            <tr><td>스케일 $\text{diag}(s_x,s_y)$</td><td>$\text{diag}(1/s_x,1/s_y)$</td><td>각 축 역수</td></tr>
+            <tr><td>전단 $\begin{bmatrix}1&k\\0&1\end{bmatrix}$</td><td>$\begin{bmatrix}1&-k\\0&1\end{bmatrix}$</td><td>부호 반전</td></tr>
+            <tr><td>반사 $F$</td><td>$F$ (자기 자신)</td><td>$F^2 = I$</td></tr>
+            <tr><td>합성 $AB$</td><td>$B^{-1}A^{-1}$</td><td>순서 뒤집힘!</td></tr>
+          </tbody>
+        </table>
+        <div class="callout">
+          <div class="callout-title">$(AB)^{-1} = B^{-1}A^{-1}$</div>
+          <p style="margin-bottom:0;">옷을 입는 순서의 역 = 옷을 벗는 순서. 양말 → 신발이면, 벗을 때는 신발 → 양말.</p>
+        </div>
+      </section>
+
+      <!-- ══════════ 6. 직접 해보기 ══════════ -->
+      <section class="exercises">
+        <h2 id="exercises">직접 해보기</h2>
+        <ol>
+          <li><strong>det 계산:</strong> $\begin{bmatrix}3&1\\2&4\end{bmatrix}$의 det? 캔버스에서 확인.</li>
+          <li><strong>역행렬 체감:</strong> 위 행렬을 넣고 "정방향 → 되감기" 해봐.</li>
+          <li><strong>특이 행렬:</strong> "rank 1" 프리셋을 눌러봐. 격자가 어떻게 되는지? 되감기가 되는지?</li>
+          <li><strong>역순서:</strong> A = 90° 회전, B = X×2. $(AB)^{-1}$을 구하고 $B^{-1}A^{-1}$과 비교.</li>
+          <li><strong>연립방정식:</strong> $\begin{bmatrix}1&2\\2&4\end{bmatrix}\vec{x}=\begin{bmatrix}3\\6\end{bmatrix}$. 해가 몇 개? det는?</li>
+        </ol>
+      </section>
+    </div>
+
+    <div class="page-nav" id="page-nav"></div>
+
+    <script>
+    var PAGE_ID = "p2_05";
+    var ON_THIS_PAGE = [
+      { id: "determinant", label: "행렬식" },
+      { id: "det-props", label: "det 성질" },
+      { id: "inverse", label: "역행렬" },
+      { id: "singular", label: "차원 축소" },
+      { id: "linear-system", label: "연립방정식" },
+      { id: "special-inverse", label: "특수 역행렬" },
+      { id: "exercises", label: "직접 해보기" }
+    ];
+    </script>
+    <script src="nav.js"></script>
+  </main>
+
+  <script src="canvas-lib.js"></script>
+  <script>
+// ============================================================
+//  공통 유틸
+// ============================================================
+function fmt(n,d){ return n.toFixed(d===undefined?2:d); }
+function mv(m,v){ return {x:m[0]*v.x+m[1]*v.y, y:m[2]*v.x+m[3]*v.y}; }
+function det4(m){ return m[0]*m[3]-m[1]*m[2]; }
+function lerpMat(a,b,t){ return [a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t,a[3]+(b[3]-a[3])*t]; }
+
+function drawXGrid(c,m){
+    var ctx=c.ctx;
+    for(var k=-8;k<=8;k++){
+        ctx.strokeStyle=k===0?'rgba(150,150,200,0.35)':'rgba(150,150,200,0.12)';
+        ctx.lineWidth=k===0?1.5:1;
+        var a=c.toS(mv(m,{x:-8,y:k})),b=c.toS(mv(m,{x:8,y:k}));
+        ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+        a=c.toS(mv(m,{x:k,y:-8}));b=c.toS(mv(m,{x:k,y:8}));
+        ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+    }
+}
+function drawPara(c,m){
+    var ctx=c.ctx;
+    var e1=mv(m,{x:1,y:0}),e2=mv(m,{x:0,y:1});
+    var o=c.toS({x:0,y:0}),p1=c.toS(e1),p2=c.toS(e2),p3=c.toS(vadd(e1,e2));
+    var d=det4(m);
+    var base=d>0.01?'131,193,103':d<-0.01?'252,98,85':'200,200,64';
+    ctx.fillStyle='rgba('+base+',0.08)';ctx.strokeStyle='rgba('+base+',0.3)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(o.x,o.y);ctx.lineTo(p1.x,p1.y);ctx.lineTo(p3.x,p3.y);ctx.lineTo(p2.x,p2.y);
+    ctx.closePath();ctx.fill();ctx.stroke();
+    // 넓이 레이블
+    var cx=(o.x+p1.x+p3.x+p2.x)/4, cy=(o.y+p1.y+p3.y+p2.y)/4;
+    if(Math.abs(d)>0.05){
+        ctx.fillStyle=d>0?'rgba(131,193,103,0.7)':'rgba(252,98,85,0.7)';
+        ctx.font='bold 13px "Cascadia Code",Consolas,monospace';
+        ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillText('|det|='+fmt(Math.abs(d)),cx,cy);
+    }
+}
+function drawBasis(c,m){
+    c.drawVector(mv(m,{x:1,y:0}),c.colors.vecA,"e₁'");
+    c.drawVector(mv(m,{x:0,y:1}),c.colors.vecB,"e₂'");
+    var o=c.toS({x:0,y:0}),ctx=c.ctx;
+    ctx.beginPath();ctx.arc(o.x,o.y,4,0,Math.PI*2);
+    ctx.fillStyle='rgba(200,200,220,0.5)';ctx.fill();
+}
+var LPTS=[{x:0.3,y:0.3},{x:2,y:0.3},{x:2,y:0.8},{x:0.8,y:0.8},{x:0.8,y:2},{x:0.3,y:2}];
+function drawL(c,m,fill,stroke){
+    var ctx=c.ctx;ctx.beginPath();
+    for(var i=0;i<LPTS.length;i++){var p=c.toS(mv(m,LPTS[i]));if(i===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);}
+    ctx.closePath();ctx.fillStyle=fill;ctx.fill();ctx.strokeStyle=stroke;ctx.lineWidth=2;ctx.stroke();
+}
+function fmtMat(m){ return '['+fmt(m[0])+' '+fmt(m[1])+']<br>['+fmt(m[2])+' '+fmt(m[3])+']'; }
+
+// ============================================================
+//  전역 행렬 상태 (두 캔버스 공유)
+// ============================================================
+var M = [2,1,0,3];
+var matEls = [document.getElementById('ma'),document.getElementById('mb'),
+              document.getElementById('mc'),document.getElementById('md')];
+var _syncing = false;
+
+function syncToInputs(){
+    if(_syncing) return; _syncing=true;
+    matEls[0].value=fmt(M[0]); matEls[1].value=fmt(M[1]);
+    matEls[2].value=fmt(M[2]); matEls[3].value=fmt(M[3]);
+    _syncing=false;
+}
+function syncFromInputs(){
+    if(_syncing) return; _syncing=true;
+    M[0]=parseFloat(matEls[0].value)||0; M[1]=parseFloat(matEls[1].value)||0;
+    M[2]=parseFloat(matEls[2].value)||0; M[3]=parseFloat(matEls[3].value)||0;
+    _syncing=false;
+    renderDet(); renderInv();
+}
+matEls.forEach(function(el){ el.addEventListener('input', syncFromInputs); });
+
+// Presets
+document.querySelectorAll('#determinant .preset-row .pbtn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+        var v=btn.dataset.m.split(',').map(Number);
+        M=[v[0],v[1],v[2],v[3]];
+        syncToInputs();
+        document.querySelectorAll('#determinant .preset-row .pbtn').forEach(function(b){b.classList.remove('active');});
+        btn.classList.add('active');
+        detT=1; detSlider.value='1'; detTVal.textContent='1.00';
+        renderDet(); renderInv();
+    });
+});
+
+// ============================================================
+//  캔버스 1 — det = 넓이 변화
+// ============================================================
+var cDet = createCanvas('cvsDet', {width:600,height:600,unit:50});
+var detT = 1;
+var detSlider = document.getElementById('detSlider');
+var detTVal = document.getElementById('detTVal');
+detSlider.addEventListener('input', function(e){ detT=parseFloat(e.target.value); detTVal.textContent=fmt(detT); renderDet(); });
+
+// 애니메이션
+var detAnim = false;
+document.getElementById('detPlay').addEventListener('click', function(){
+    if(detAnim){detAnim=false;return;} detAnim=true; detT=0;
+    function tick(){
+        if(!detAnim)return;
+        detT+=0.012; if(detT>=1){detT=1;detAnim=false;}
+        detSlider.value=detT; detTVal.textContent=fmt(detT);
+        renderDet(); if(detAnim) requestAnimationFrame(tick);
+    } tick();
+});
+
+function renderDet(){
+    cDet.clear(); cDet.drawGrid();
+    var I=[1,0,0,1];
+    var m=lerpMat(I,M,detT);
+    drawXGrid(cDet,m); drawPara(cDet,m); drawBasis(cDet,m);
+
+    var d=det4(m);
+    var dFull=det4(M);
+    document.getElementById('detCalc').innerHTML =
+        fmt(M[0])+'×'+fmt(M[3])+' − '+fmt(M[1])+'×'+fmt(M[2])+' = <strong>'+fmt(dFull)+'</strong>';
+    var sc=Math.abs(dFull)<0.02?'zero':dFull>0?'positive':'negative';
+    var desc=Math.abs(dFull)<0.02?'차원 축소!':dFull>0?'넓이 ×'+fmt(Math.abs(dFull))+', 방향 보존':'넓이 ×'+fmt(Math.abs(dFull))+', 뒤집힘';
+    document.getElementById('detDisp').innerHTML =
+        'det = <span class="vd '+sc+'">'+fmt(dFull)+'</span> <span style="font-size:0.82rem;color:var(--text-secondary);">('+desc+')</span>';
+    document.getElementById('detCol1').innerHTML =
+        '<span class="va">('+fmt(M[0])+', '+fmt(M[2])+')</span>';
+    document.getElementById('detCol2').innerHTML =
+        '<span class="vb">('+fmt(M[1])+', '+fmt(M[3])+')</span>';
+}
+
+// ============================================================
+//  캔버스 2 — 역변환 되감기
+// ============================================================
+var cInv = createCanvas('cvsInv', {width:600,height:600,unit:50});
+var invT = 0;
+var invSlider = document.getElementById('invSlider');
+var invTVal = document.getElementById('invTVal');
+var invAnimating = false, invDir = 1;
+
+invSlider.addEventListener('input', function(e){
+    invT=parseFloat(e.target.value); invTVal.textContent=fmt(invT); renderInv();
+});
+
+function animInv(dir){
+    if(invAnimating){invAnimating=false;return;}
+    invAnimating=true; invDir=dir;
+    if(dir>0) invT=0; else invT=1;
+    function tick(){
+        if(!invAnimating)return;
+        invT+=invDir*0.012;
+        if(invDir>0&&invT>=1){invT=1;invAnimating=false;}
+        if(invDir<0&&invT<=0){invT=0;invAnimating=false;}
+        invSlider.value=invT; invTVal.textContent=fmt(invT);
+        renderInv(); if(invAnimating) requestAnimationFrame(tick);
+    } tick();
+}
+
+document.getElementById('invFwd').addEventListener('click', function(){ animInv(1); });
+document.getElementById('invRev').addEventListener('click', function(){
+    var d=det4(M);
+    if(Math.abs(d)<0.01) return;
+    animInv(-1);
+});
+
+function renderInv(){
+    cInv.clear(); cInv.drawGrid();
+    var I=[1,0,0,1];
+    var m=lerpMat(I,M,invT);
+    var d=det4(M);
+
+    // ghost L at identity
+    drawL(cInv,I,'rgba(171,107,219,0.04)','rgba(171,107,219,0.1)');
+    drawXGrid(cInv,m); drawPara(cInv,m); drawBasis(cInv,m);
+    drawL(cInv,m,'rgba(171,107,219,0.1)','rgba(171,107,219,0.35)');
+
+    // Panel: M
+    document.getElementById('invM').innerHTML = fmtMat(M);
+
+    // M⁻¹
+    var warn = document.getElementById('invWarn');
+    var revBtn = document.getElementById('invRev');
+    if(Math.abs(d)<0.01){
+        document.getElementById('invMinv').innerHTML = '<span style="color:var(--negative)">존재하지 않음</span>';
+        document.getElementById('invVerify').innerHTML = '<span style="color:var(--negative)">역행렬 없음 — 검증 불가</span>';
+        warn.style.display='block';
+        revBtn.disabled=true;
+    } else {
+        var inv = [M[3]/d, -M[1]/d, -M[2]/d, M[0]/d];
+        document.getElementById('invMinv').innerHTML = fmtMat(inv);
+        // M⁻¹M 계산
+        var prod = [inv[0]*M[0]+inv[1]*M[2], inv[0]*M[1]+inv[1]*M[3],
+                    inv[2]*M[0]+inv[3]*M[2], inv[2]*M[1]+inv[3]*M[3]];
+        document.getElementById('invVerify').innerHTML =
+            'M⁻¹·M = ['+fmt(prod[0])+' '+fmt(prod[1])+' / '+fmt(prod[2])+' '+fmt(prod[3])+'] = <span class="vc" style="font-weight:700">I ✓</span>';
+        warn.style.display='none';
+        revBtn.disabled=false;
+    }
+
+    // State
+    var state = invT<0.01?'원래 격자 (항등)':invT>0.99?'M 적용 완료':'변환 중 (t='+fmt(invT)+')';
+    document.getElementById('invState').textContent = state;
+}
+
+// ============================================================
+//  캔버스 3 — 차원 축소 (클릭→원상 표시)
+// ============================================================
+var cSing = createCanvas('cvsSing', {width:600,height:600,unit:50});
+var Msing = [1,2,0.5,1]; // rank 1 default
+var clickedPt = null;
+
+// Presets
+document.querySelectorAll('.sing-pre').forEach(function(btn){
+    btn.addEventListener('click', function(){
+        var v=btn.dataset.m.split(',').map(Number);
+        Msing=v; clickedPt=null;
+        document.querySelectorAll('.sing-pre').forEach(function(b){b.classList.remove('active');});
+        btn.classList.add('active');
+        document.getElementById('singPreimg').innerHTML='클릭 전';
+        renderSing();
+    });
+});
+
+// Click on canvas → find pre-images
+cSing.cvs.addEventListener('click', function(e){
+    var r=cSing.cvs.getBoundingClientRect();
+    var sx=(e.clientX-r.left)*600/r.width, sy=(e.clientY-r.top)*600/r.height;
+    var w=cSing.toW(sx,sy);
+    // Snap to the image line: project w onto the column space of Msing
+    var col1={x:Msing[0],y:Msing[2]}; // first column
+    var cMag=mag(col1);
+    if(cMag<0.01) { clickedPt={x:0,y:0}; } // rank 0: only origin
+    else {
+        var n=norm(col1);
+        var proj=dot(w,n);
+        clickedPt={x:n.x*proj, y:n.y*proj};
+    }
+    renderSing();
+});
+
+function renderSing(){
+    cSing.clear(); cSing.drawGrid();
+    var ctx=cSing.ctx;
+    var m=Msing;
+
+    // 변환된 격자
+    drawXGrid(cSing,m);
+
+    // 기저 벡터
+    var e1p=mv(m,{x:1,y:0}), e2p=mv(m,{x:0,y:1});
+    if(mag(e1p)>0.1) cSing.drawVector(e1p,cSing.colors.vecA,"e₁'");
+    if(mag(e2p)>0.1) cSing.drawVector(e2p,cSing.colors.vecB,"e₂'");
+
+    // 원점
+    var o=cSing.toS({x:0,y:0});
+    ctx.beginPath();ctx.arc(o.x,o.y,4,0,Math.PI*2);
+    ctx.fillStyle='rgba(200,200,220,0.5)';ctx.fill();
+
+    // 클릭 포인트 + 원상(pre-image) 표시
+    if(clickedPt){
+        // 클릭점 (결과)
+        cSing.drawPoint(clickedPt,cSing.colors.proj,'b (결과)');
+
+        // 원상 계산: Mx = b인 x들. rank 1이면 특수해 + null space 방향
+        var col1={x:m[0],y:m[2]}, col2={x:m[1],y:m[3]};
+        var cMag=mag(col1);
+        if(cMag<0.01){
+            // rank 0: 모든 점이 원점으로 → b=0이면 모든 x, b≠0이면 해 없음
+            if(mag(clickedPt)<0.1){
+                document.getElementById('singPreimg').innerHTML='<span style="color:var(--negative)">모든 점이 원점으로 갔음 → 모든 x가 해</span>';
+            } else {
+                document.getElementById('singPreimg').innerHTML='<span style="color:var(--negative)">이 점에 도달하는 원래 점은 없음 (해 없음)</span>';
+            }
+        } else {
+            // rank 1: 특수해 구하기 (최소 노름)
+            // Mx=b → x = pseudoinverse * b
+            // null space direction: 열이 일직선이므로 null space = {t * (-col1.y, col1.x) 정규화 후 스케일}
+            // 실제로는: m[0]*x + m[1]*y = bx, m[2]*x + m[3]*y = by
+            // 첫 행 사용: x = (bx - m[1]*t) / m[0] (m[0]≠0인 경우)
+            var nullDir;
+            if(Math.abs(m[0])>0.01){
+                nullDir = {x: -m[1]/m[0], y: 1};
+            } else if(Math.abs(m[1])>0.01){
+                nullDir = {x: 1, y: -m[0]/m[1]};
+            } else {
+                nullDir = {x: 0, y: 1};
+            }
+            // 특수해: 첫 행에서 t=0
+            var x0;
+            if(Math.abs(m[0])>0.01){
+                x0 = {x: clickedPt.x/m[0], y: 0};
+            } else if(Math.abs(m[1])>0.01){
+                x0 = {x: 0, y: clickedPt.x/m[1]};
+            } else {
+                x0 = {x:0,y:0};
+            }
+
+            // 원상 직선 그리기: x0 + t*nullDir
+            var far1 = vadd(x0, vscale(nullDir, 8));
+            var far2 = vadd(x0, vscale(nullDir, -8));
+            cSing.drawDashed(far1,far2,'rgba(252,98,85,0.4)',2,[6,4]);
+
+            // 원상 점 몇 개 표시
+            for(var t=-3;t<=3;t++){
+                var pt=vadd(x0,vscale(nullDir,t));
+                var ps=cSing.toS(pt);
+                ctx.beginPath();ctx.arc(ps.x,ps.y,5,0,Math.PI*2);
+                ctx.fillStyle='rgba(252,98,85,0.5)';ctx.fill();
+                ctx.strokeStyle='rgba(252,98,85,0.8)';ctx.lineWidth=1.5;ctx.stroke();
+            }
+            // 화살표: 원상 → 결과
+            for(var t=-2;t<=2;t+=2){
+                var pt=vadd(x0,vscale(nullDir,t));
+                cSing.drawDashed(pt,clickedPt,'rgba(252,98,85,0.15)',1,[3,3]);
+            }
+
+            document.getElementById('singPreimg').innerHTML=
+                '빨간 직선 위의 <span style="color:var(--negative);font-weight:700">모든 점</span>이 같은 결과로 감<br>'+
+                '→ 어느 것이 원래였는지 특정 불가 = <strong>되돌리기 불가</strong>';
+        }
+    }
+
+    document.getElementById('singMat').innerHTML=fmtMat(m)+' (det = 0)';
+}
+renderSing();
+
+// ============================================================
+//  Init
+// ============================================================
+syncToInputs(); renderDet(); renderInv();
+  </script>
+</body>
+</html>

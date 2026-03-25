@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MyAcademy — 선형대수</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <button class="hamburger" id="hamburger" aria-label="메뉴 열기">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="header-logo">
+      MyAcademy<span class="subtitle">선형대수 × 그래픽스 × AI</span>
+    </div>
+    <button class="theme-toggle" id="themeToggle" aria-label="테마 전환">
+      <span class="theme-toggle-icon"></span>
+    </button>
+  </header>
+
+  <!-- Sidebar Overlay -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- Sidebar -->
+  <nav class="sidebar" id="sidebar"></nav>
+
+  <!-- Main -->
+  <main class="main-content">
+    <div class="hero fade-in">
+      <h1>선형대수<br>학습 노트</h1>
+      <p class="hero-sub">
+        그래픽스와 AI를 위한 선형대수 핵심 개념 정리.
+        <br>기하학적 직관 → 공식 순서로, 인터랙티브 시각화와 함께.
+      </p>
+    </div>
+
+    <div class="lesson-grid" id="lesson-grid"></div>
+
+    <script>var PAGE_ID = "index";</script>
+    <script src="nav.js"></script>
+  </main>
+</body>
+</html>
