@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 3 — 아핀 변환 & 4×4 행렬 | MyAcademy</title>
+    <link rel="stylesheet" href="style.css">
+    <script>
+    MathJax = { tex: { inlineMath: [['$','$']], displayMath: [['$$','$$']] }, svg: { fontCache: 'global' } };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+    <style>
+        .t-slider-row { display:flex; align-items:center; gap:1rem; margin-top:0.5rem; font-size:0.9rem; }
+        .t-slider-row input[type="range"] { flex:1; max-width:260px; accent-color:var(--accent); }
+        .t-slider-row .t-val { font-family:var(--font-code); font-weight:700; color:var(--accent); min-width:3rem; }
+        .slider-label { min-width:2rem; font-weight:600; font-size:0.85rem; }
+        .pbtn { font-size:0.78rem; padding:0.25rem 0.6rem; background:var(--bg-surface); border:1px solid var(--border); border-radius:4px; cursor:pointer; color:var(--text-primary); font-family:inherit; transition:all 0.2s; }
+        .pbtn:hover, .pbtn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+        .preset-row { display:flex; gap:0.4rem; flex-wrap:wrap; margin-top:0.5rem; justify-content:center; }
+    </style>
+</head>
+<body>
+  <header class="header">
+    <button class="hamburger" id="hamburger" aria-label="메뉴"><span></span><span></span><span></span></button>
+    <div class="header-logo">MyAcademy<span class="subtitle">선형대수 × 그래픽스 × AI</span></div>
+    <button class="theme-toggle" id="themeToggle" aria-label="테마 전환"><span class="theme-toggle-icon"></span></button>
+  </header>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <nav class="sidebar" id="sidebar"></nav>
+
+  <main class="main-content">
+    <div class="content">
+      <div class="page-title">
+        <div class="tag tag-lesson">PHASE 3</div>
+        <h1>아핀 변환 & 4×4 행렬</h1>
+        <p class="page-desc">이동은 선형 변환이 아니다 — 차원을 올려서 선형으로 만든다</p>
+      </div>
+
+      <!-- ══════════ 1. 이동은 선형이 아니다 ══════════ -->
+      <section>
+        <h2 id="not-linear">이동은 선형 변환이 아니다</h2>
+        <p>Phase 2의 모든 변환(스케일, 회전, 반사, 전단)에는 공통점이 있다: <strong>원점이 고정</strong>. 선형 변환은 $T(\vec{0}) = \vec{0}$이니까. 이동은 원점을 움직여야 하므로 — 선형이 아니다.</p>
+        <div class="formula-box">
+          <p style="font-weight:600;color:var(--text-primary);">해법: 차원을 하나 올린다 (p1_05 복습)</p>
+          $$\begin{bmatrix} x' \\ y' \\ 1 \end{bmatrix} = \begin{bmatrix} 1 & 0 & t_x \\ 0 & 1 & t_y \\ 0 & 0 & 1 \end{bmatrix} \begin{bmatrix} x \\ y \\ 1 \end{bmatrix}$$
+          <p class="note">2D에서는 3×3, 3D에서는 4×4. 원리는 같다.</p>
+        </div>
+
+        <div style="display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;">
+          <!-- 왼쪽: 선형 (원점 고정) -->
+          <div style="flex:1;min-width:280px;max-width:420px;">
+            <div style="text-align:center;font-weight:700;font-size:0.9rem;margin-bottom:0.4rem;padding:0.3rem;border-radius:6px;background:rgba(252,98,85,0.08);color:var(--negative);">2×2 선형 — 원점 절대 고정</div>
+            <canvas id="cvsLinear" width="400" height="400" style="max-width:100%;height:auto;border-radius:10px;"></canvas>
+            <div class="t-slider-row"><span class="slider-label">θ</span><input type="range" id="linR" min="-180" max="180" step="1" value="30"><span class="t-val" id="linRV">30°</span></div>
+            <div class="t-slider-row"><span class="slider-label">s</span><input type="range" id="linS" min="0.3" max="2.5" step="0.1" value="1.5"><span class="t-val" id="linSV">1.50</span></div>
+          </div>
+          <!-- 오른쪽: 동차 (원점 이동) -->
+          <div style="flex:1;min-width:280px;max-width:420px;">
+            <div style="text-align:center;font-weight:700;font-size:0.9rem;margin-bottom:0.4rem;padding:0.3rem;border-radius:6px;background:rgba(131,193,103,0.08);color:var(--positive);">3×3 동차 — 원점이 이동!</div>
+            <canvas id="cvsAffine" width="400" height="400" style="max-width:100%;height:auto;border-radius:10px;"></canvas>
+            <div class="t-slider-row"><span class="slider-label">t<sub>x</sub></span><input type="range" id="txSlider" min="-4" max="4" step="0.1" value="2"><span class="t-val" id="txVal">2.0</span></div>
+            <div class="t-slider-row"><span class="slider-label">t<sub>y</sub></span><input type="range" id="tySlider" min="-4" max="4" step="0.1" value="1"><span class="t-val" id="tyVal">1.0</span></div>
+          </div>
+        </div>
+        <div class="math-panel" style="width:100%;max-width:600px;margin:1rem auto 0;min-width:unset;">
+          <div class="calc-group">
+            <div class="label">왼쪽 (선형 2×2)</div>
+            <div class="calc-row" id="transLinMat"></div>
+          </div>
+          <div class="calc-group">
+            <div class="label">오른쪽 (동차 3×3)</div>
+            <div class="calc-row" id="transMatrix"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ 2. 아핀 변환 ══════════ -->
+      <section>
+        <h2 id="affine">아핀 변환 = 선형 + 이동</h2>
+        <div class="formula-box">
+          $$\text{아핀}(\vec{v}) = M\vec{v} + \vec{t} \quad\longrightarrow\quad \begin{bmatrix} M & \vec{t} \\ \vec{0} & 1 \end{bmatrix} \begin{bmatrix} \vec{v} \\ 1 \end{bmatrix}$$
+          <p class="note">왼쪽 위 = 선형 변환, 마지막 열 = 이동, 마지막 행 = $[0\;\cdots\;0\;\;1]$.</p>
+        </div>
+      </section>
+
+      <!-- ══════════ 3. w=1 vs w=0 ══════════ -->
+      <section>
+        <h2 id="w-coord">w = 1 vs w = 0 — 점과 방향</h2>
+        <p>이동 행렬 $\times (x,y,w)$에서 $x' = x + t_x \cdot w$.</p>
+        <div class="info-cards">
+          <div class="info-card">
+            <h4>w = 1 → 점</h4>
+            <p>이동의 영향을 받는다. 위치가 있다.</p>
+          </div>
+          <div class="info-card">
+            <h4>w = 0 → 방향</h4>
+            <p>이동의 영향을 받지 않는다. 위치가 없다. 빛의 방향, 법선 벡터.</p>
+          </div>
+        </div>
+
+        <div class="interactive-section" style="flex-direction:column;align-items:center;">
+          <div class="canvas-wrap">
+            <canvas id="cvsPointDir" width="600" height="600"></canvas>
+            <div class="t-slider-row">
+              <span class="slider-label">t<sub>x</sub></span>
+              <input type="range" id="pdTx" min="-4" max="4" step="0.1" value="2">
+              <span class="t-val" id="pdTxVal">2.0</span>
+            </div>
+            <div class="t-slider-row">
+              <span class="slider-label">t<sub>y</sub></span>
+              <input type="range" id="pdTy" min="-4" max="4" step="0.1" value="1.5">
+              <span class="t-val" id="pdTyVal">1.5</span>
+            </div>
+          </div>
+          <div class="math-panel" style="width:100%;max-width:600px;min-width:unset;">
+            <h3>이동 적용 결과</h3>
+            <div class="calc-group">
+              <div class="label">점 P (w=1)</div>
+              <div class="calc-row" id="pdPoint"></div>
+            </div>
+            <div class="calc-group">
+              <div class="label">방향 d (w=0)</div>
+              <div class="calc-row" id="pdDir"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ 4. 4×4 행렬들 ══════════ -->
+      <section>
+        <h2 id="matrices-4x4">3D 기본 4×4 행렬</h2>
+        <p style="margin-bottom:0.5rem;font-weight:600;">패턴: 왼쪽 위 3×3 = 선형 변환, 4열 = 이동, 4행 = $[0\;0\;0\;1]$</p>
+        <div class="formula-box">
+          <p style="font-weight:600;color:var(--vec-c);margin-bottom:0.3rem;">이동 (Translation)</p>
+          $$T(t_x, t_y, t_z) = \begin{bmatrix} 1 & 0 & 0 & t_x \\ 0 & 1 & 0 & t_y \\ 0 & 0 & 1 & t_z \\ 0 & 0 & 0 & 1 \end{bmatrix}$$
+        </div>
+        <div class="formula-box">
+          <p style="font-weight:600;color:var(--vec-a);margin-bottom:0.3rem;">스케일 (Scale)</p>
+          $$S(s_x, s_y, s_z) = \begin{bmatrix} s_x & 0 & 0 & 0 \\ 0 & s_y & 0 & 0 \\ 0 & 0 & s_z & 0 \\ 0 & 0 & 0 & 1 \end{bmatrix}$$
+        </div>
+        <div class="formula-box">
+          <p style="font-weight:600;color:var(--vec-b);margin-bottom:0.3rem;">회전 (z축 기준 예시)</p>
+          $$R_z(\theta) = \begin{bmatrix} \cos\theta & -\sin\theta & 0 & 0 \\ \sin\theta & \cos\theta & 0 & 0 \\ 0 & 0 & 1 & 0 \\ 0 & 0 & 0 & 1 \end{bmatrix}$$
+        </div>
+      </section>
+
+      <!-- ══════════ 5. SRT 순서 ══════════ -->
+      <section>
+        <h2 id="srt">SRT 순서 — 왜 스케일 → 회전 → 이동?</h2>
+        <div class="formula-box">
+          $$M_{world} = T \cdot R \cdot S$$
+          <p class="note">오른쪽부터: S 먼저(크기) → R 다음(방향) → T 마지막(위치). 순서가 바뀌면 결과가 완전히 다르다.</p>
+        </div>
+
+        <div class="interactive-section" style="flex-direction:column;align-items:center;">
+          <div class="canvas-wrap">
+            <canvas id="cvsSRT" width="600" height="600"></canvas>
+            <div class="t-slider-row">
+              <span class="slider-label">S<sub>x</sub></span>
+              <input type="range" id="srtSx" min="0.5" max="3" step="0.1" value="1.5">
+              <span class="t-val" id="srtSxVal">1.50</span>
+            </div>
+            <div class="t-slider-row">
+              <span class="slider-label">S<sub>y</sub></span>
+              <input type="range" id="srtSy" min="0.5" max="3" step="0.1" value="1">
+              <span class="t-val" id="srtSyVal">1.00</span>
+            </div>
+            <div class="t-slider-row">
+              <span class="slider-label">R</span>
+              <input type="range" id="srtR" min="-180" max="180" step="1" value="30">
+              <span class="t-val" id="srtRVal">30°</span>
+            </div>
+            <div class="t-slider-row">
+              <span class="slider-label">T<sub>x</sub></span>
+              <input type="range" id="srtTx" min="-5" max="5" step="0.1" value="3">
+              <span class="t-val" id="srtTxVal">3.0</span>
+            </div>
+            <div class="t-slider-row">
+              <span class="slider-label">T<sub>y</sub></span>
+              <input type="range" id="srtTy" min="-5" max="5" step="0.1" value="2">
+              <span class="t-val" id="srtTyVal">2.0</span>
+            </div>
+            <div class="preset-row">
+              <button class="pbtn active" id="btnSRT">SRT (정상)</button>
+              <button class="pbtn" id="btnTRS">TRS (비교)</button>
+            </div>
+          </div>
+          <div class="math-panel" style="width:100%;max-width:600px;min-width:unset;">
+            <h3>순서 비교</h3>
+            <div class="calc-group">
+              <div class="label">현재 순서</div>
+              <div class="calc-row" id="srtOrder"></div>
+            </div>
+            <div class="calc-group">
+              <div class="label">원점(0,0)이 어디로?</div>
+              <div class="calc-row" id="srtOrigin"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout">
+          <div class="callout-title">순서가 바뀌면?</div>
+          <p style="margin-bottom:0;"><strong>T→R</strong>: 원점에서 멀어진 후 회전 → 공전 궤도. <strong>T→S</strong>: 옮긴 후 스케일 → 원점 기준 폭발. SRT가 "로컬에서 완성 → 배치" 패턴에 맞는 유일한 순서.</p>
+        </div>
+      </section>
+
+      <!-- ══════════ 6. 직접 해보기 ══════════ -->
+      <section class="exercises">
+        <h2 id="exercises">직접 해보기</h2>
+        <ol>
+          <li><strong>이동 확인:</strong> 캔버스 ①에서 이동 슬라이더를 올려봐. 격자의 원점이 어디로 가는지.</li>
+          <li><strong>점 vs 방향:</strong> 캔버스 ②에서 같은 이동을 적용했을 때, w=1 점과 w=0 방향 비교.</li>
+          <li><strong>4×4 읽기:</strong> $\begin{bmatrix}1&0&0&5\\0&1&0&-3\\0&0&1&2\\0&0&0&1\end{bmatrix}$은 무슨 변환?</li>
+          <li><strong>SRT vs TRS:</strong> 캔버스 ③에서 두 순서의 결과 비교. TRS에서 삼각형이 왜 엉뚱한 곳으로 가는지.</li>
+          <li><strong>합성 계산:</strong> $T(1,2) \cdot R(90°)$를 3×3 동차로 직접 곱해봐.</li>
+        </ol>
+      </section>
+    </div>
+
+    <div class="page-nav" id="page-nav"></div>
+
+    <script>
+    var PAGE_ID = "p3_01";
+    var ON_THIS_PAGE = [
+      { id: "not-linear", label: "이동은 선형이 아니다" },
+      { id: "affine", label: "아핀 변환" },
+      { id: "w-coord", label: "w=1 vs w=0" },
+      { id: "matrices-4x4", label: "4×4 행렬" },
+      { id: "srt", label: "SRT 순서" },
+      { id: "exercises", label: "직접 해보기" }
+    ];
+    </script>
+    <script src="nav.js"></script>
+  </main>
+
+  <script src="canvas-lib.js"></script>
+  <script>
+// ============================================================
+//  공통
+// ============================================================
+var DEG=180/Math.PI, RAD=Math.PI/180;
+function fmt(n,d){return n.toFixed(d===undefined?2:d);}
+
+// 2D 동차 (3×3): m=[a,b,tx, c,d,ty] → [[a,b,tx],[c,d,ty],[0,0,1]]
+function affine(m,v){return{x:m[0]*v.x+m[1]*v.y+m[2], y:m[3]*v.x+m[4]*v.y+m[5]};}
+
+function drawAffineGrid(c,m,range){
+    var ctx=c.ctx; range=range||6;
+    for(var k=-range;k<=range;k++){
+        ctx.strokeStyle=k===0?'rgba(150,150,200,0.3)':'rgba(150,150,200,0.1)';
+        ctx.lineWidth=k===0?1.2:0.8;
+        var a=c.toS(affine(m,{x:-range,y:k})),b=c.toS(affine(m,{x:range,y:k}));
+        ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+        a=c.toS(affine(m,{x:k,y:-range}));b=c.toS(affine(m,{x:k,y:range}));
+        ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+    }
+}
+
+// L shape
+var LPTS=[{x:0,y:0},{x:1.5,y:0},{x:1.5,y:0.4},{x:0.4,y:0.4},{x:0.4,y:1.2},{x:0,y:1.2}];
+function drawShape(c,m,fill,stroke){
+    var ctx=c.ctx;ctx.beginPath();
+    for(var i=0;i<LPTS.length;i++){
+        var p=c.toS(affine(m,LPTS[i]));
+        if(i===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);
+    }
+    ctx.closePath();ctx.fillStyle=fill;ctx.fill();
+    ctx.strokeStyle=stroke;ctx.lineWidth=2;ctx.stroke();
+}
+
+// ============================================================
+//  캔버스 1 — 좌우 비교: 선형(원점 고정) vs 동차(이동 가능)
+// ============================================================
+(function(){
+    // 왼쪽: 선형
+    var cL=createCanvas('cvsLinear',{width:400,height:400,unit:40});
+    var linR=30, linS=1.5;
+    var lrS=document.getElementById('linR'),lsS=document.getElementById('linS');
+    var lrV=document.getElementById('linRV'),lsV=document.getElementById('linSV');
+    lrS.addEventListener('input',function(e){linR=parseInt(e.target.value);lrV.textContent=linR+'°';renderBoth();});
+    lsS.addEventListener('input',function(e){linS=parseFloat(e.target.value);lsV.textContent=fmt(linS);renderBoth();});
+
+    // 오른쪽: 동차
+    var cR=createCanvas('cvsAffine',{width:400,height:400,unit:40});
+    var tx=2, ty=1;
+    var txS=document.getElementById('txSlider'),tyS=document.getElementById('tySlider');
+    var txV=document.getElementById('txVal'),tyV=document.getElementById('tyVal');
+    txS.addEventListener('input',function(e){tx=parseFloat(e.target.value);txV.textContent=fmt(tx,1);renderBoth();});
+    tyS.addEventListener('input',function(e){ty=parseFloat(e.target.value);tyV.textContent=fmt(ty,1);renderBoth();});
+
+    function renderBoth(){
+        // ── 왼쪽: 선형 ──
+        cL.clear(); cL.drawGrid();
+        var rad=linR*RAD, co=Math.cos(rad), si=Math.sin(rad);
+        var mLin=[co*linS,-si*linS,0, si*linS,co*linS,0]; // rotate+scale, no translation
+        drawAffineGrid(cL,mLin,5);
+        var e1L=affine(mLin,{x:1,y:0}),e2L=affine(mLin,{x:0,y:1});
+        cL.drawVector(e1L,cL.colors.vecA,"e₁'");
+        cL.drawVector(e2L,cL.colors.vecB,"e₂'");
+        // 원점 강조 (절대 안 움직임)
+        var oL=cL.toS({x:0,y:0});
+        cL.ctx.beginPath();cL.ctx.arc(oL.x,oL.y,7,0,Math.PI*2);
+        cL.ctx.fillStyle=cL.colors.proj;cL.ctx.fill();
+        cL.ctx.fillStyle='#fff';cL.ctx.font='bold 11px "Noto Sans KR",sans-serif';
+        cL.ctx.textAlign='center';cL.ctx.textBaseline='bottom';
+        cL.ctx.fillText('원점 고정!',oL.x,oL.y-10);
+
+        // ── 오른쪽: 동차 ──
+        cR.clear(); cR.drawGrid();
+        var mAff=[1,0,tx, 0,1,ty];
+        drawAffineGrid(cR,mAff,5);
+        var oR=affine(mAff,{x:0,y:0});
+        var e1R=affine(mAff,{x:1,y:0}),e2R=affine(mAff,{x:0,y:1});
+        cR.drawVectorFrom(oR,e1R,cR.colors.vecA,"e₁'");
+        cR.drawVectorFrom(oR,e2R,cR.colors.vecB,"e₂'");
+        // 이동 화살표
+        cR.drawDashed({x:0,y:0},oR,'rgba(131,193,103,0.4)',2,[6,3]);
+        var osR=cR.toS(oR);
+        cR.ctx.beginPath();cR.ctx.arc(osR.x,osR.y,7,0,Math.PI*2);
+        cR.ctx.fillStyle=cR.colors.vecC;cR.ctx.fill();
+        cR.ctx.fillStyle='#fff';cR.ctx.font='bold 11px "Noto Sans KR",sans-serif';
+        cR.ctx.textAlign='center';cR.ctx.textBaseline='bottom';
+        cR.ctx.fillText('원점 이동!',osR.x,osR.y-10);
+
+        // 패널
+        document.getElementById('transLinMat').innerHTML=
+            '['+fmt(co*linS,2)+' '+fmt(-si*linS,2)+']<br>['+fmt(si*linS,2)+' '+fmt(co*linS,2)+'] — 원점: <span style="color:var(--negative)">(0, 0) 고정</span>';
+        document.getElementById('transMatrix').innerHTML=
+            '[1  0  <span class="vc">'+fmt(tx,1)+'</span>]<br>'+
+            '[0  1  <span class="vc">'+fmt(ty,1)+'</span>]<br>'+
+            '[0  0  1] — 원점: <span class="vc">('+fmt(tx,1)+', '+fmt(ty,1)+')</span>';
+    }
+    renderBoth();
+})();
+
+// ============================================================
+//  캔버스 2 — 점 vs 방향
+// ============================================================
+(function(){
+    var c=createCanvas('cvsPointDir',{width:600,height:600,unit:50});
+    var P={x:2,y:1}, D={x:1.5,y:2}; // 점, 방향
+    var tx=2, ty=1.5;
+    var txS=document.getElementById('pdTx'),tyS=document.getElementById('pdTy');
+    var txV=document.getElementById('pdTxVal'),tyV=document.getElementById('pdTyVal');
+    txS.addEventListener('input',function(e){tx=parseFloat(e.target.value);txV.textContent=fmt(tx,1);render();});
+    tyS.addEventListener('input',function(e){ty=parseFloat(e.target.value);tyV.textContent=fmt(ty,1);render();});
+
+    var drag=c.makeDraggable([
+        {id:'P',get:function(){return P;},set:function(v){P=v;},color:c.colors.vecC},
+        {id:'D',get:function(){return D;},set:function(v){D=v;},color:c.colors.vecA}
+    ],render);
+
+    function render(){
+        c.clear(); c.drawGrid();
+        var ctx=c.ctx;
+
+        // 이동된 점 P (w=1)
+        var Pt={x:P.x+tx, y:P.y+ty};
+        c.drawDashed(P,Pt,'rgba(131,193,103,0.35)',2,[6,3]);
+        c.drawPoint(P,'rgba(131,193,103,0.4)','P (원래)');
+        c.drawPoint(Pt,c.colors.vecC,"P' (이동됨)");
+        c.drawHandle(P,c.colors.vecC,drag.isHovered('P'));
+
+        // 방향 D (w=0) — 이동 안 됨
+        c.drawVector(D,c.colors.vecA,'d');
+        // "이동 후"의 D도 같은 자리
+        var Ds=c.toS(D);
+        ctx.fillStyle='rgba(232,200,64,0.5)';ctx.font='11px "Noto Sans KR",sans-serif';
+        ctx.textAlign='left';ctx.textBaseline='top';
+        ctx.fillText("d' = d (w=0, 이동 무효)",Ds.x+10,Ds.y+10);
+        c.drawHandle(D,c.colors.vecA,drag.isHovered('D'));
+
+        // 패널
+        document.getElementById('pdPoint').innerHTML=
+            'P = <span class="vc">'+fmt(P.x)+', '+fmt(P.y)+'</span>, w=1 → P\' = <span class="vc">'+fmt(Pt.x)+', '+fmt(Pt.y)+'</span>';
+        document.getElementById('pdDir').innerHTML=
+            'd = <span class="va">'+fmt(D.x)+', '+fmt(D.y)+'</span>, w=0 → d\' = <span class="va">'+fmt(D.x)+', '+fmt(D.y)+'</span> (변화 없음)';
+    }
+    render();
+})();
+
+// ============================================================
+//  캔버스 3 — SRT 순서 데모
+// ============================================================
+(function(){
+    var c=createCanvas('cvsSRT',{width:600,height:600,unit:50});
+    var sx=1.5,sy=1,rot=30,txv=3,tyv=2;
+    var useSRT=true;
+
+    var sxS=document.getElementById('srtSx'),syS=document.getElementById('srtSy');
+    var rS=document.getElementById('srtR');
+    var txS=document.getElementById('srtTx'),tyS=document.getElementById('srtTy');
+    var sxV=document.getElementById('srtSxVal'),syV=document.getElementById('srtSyVal');
+    var rV=document.getElementById('srtRVal');
+    var txV=document.getElementById('srtTxVal'),tyV=document.getElementById('srtTyVal');
+
+    sxS.addEventListener('input',function(e){sx=parseFloat(e.target.value);sxV.textContent=fmt(sx);render();});
+    syS.addEventListener('input',function(e){sy=parseFloat(e.target.value);syV.textContent=fmt(sy);render();});
+    rS.addEventListener('input',function(e){rot=parseInt(e.target.value);rV.textContent=rot+'°';render();});
+    txS.addEventListener('input',function(e){txv=parseFloat(e.target.value);txV.textContent=fmt(txv,1);render();});
+    tyS.addEventListener('input',function(e){tyv=parseFloat(e.target.value);tyV.textContent=fmt(tyv,1);render();});
+
+    document.getElementById('btnSRT').addEventListener('click',function(){
+        useSRT=true;this.classList.add('active');document.getElementById('btnTRS').classList.remove('active');render();
+    });
+    document.getElementById('btnTRS').addEventListener('click',function(){
+        useSRT=false;this.classList.add('active');document.getElementById('btnSRT').classList.remove('active');render();
+    });
+
+    // 3×3 affine matrix builders
+    function matS(a,b){return[a,0,0, 0,b,0];}
+    function matR(deg){var r=deg*RAD,co=Math.cos(r),si=Math.sin(r);return[co,-si,0, si,co,0];}
+    function matT(a,b){return[1,0,a, 0,1,b];}
+    // compose A * B (3×3 affine, stored as [a,b,tx,c,d,ty])
+    function mul(A,B){
+        return [
+            A[0]*B[0]+A[1]*B[3], A[0]*B[1]+A[1]*B[4], A[0]*B[2]+A[1]*B[5]+A[2],
+            A[3]*B[0]+A[4]*B[3], A[3]*B[1]+A[4]*B[4], A[3]*B[2]+A[4]*B[5]+A[5]
+        ];
+    }
+
+    function render(){
+        c.clear(); c.drawGrid();
+        var S=matS(sx,sy), R=matR(rot), T=matT(txv,tyv);
+        var M;
+        if(useSRT) M=mul(T,mul(R,S)); // T*(R*S) = SRT순서
+        else M=mul(mul(T,R),S); // 이것도 TRS... 아니, TRS = S먼저적용? 아, TRS 순서는 T*R*S인데 적용순서는 S→R→T=SRT.
+        // TRS 순서: 적용 순서가 T먼저, R다음, S마지막 = S*(R*(T*v))
+        // 즉 M = S * R * T
+        if(!useSRT) M=mul(S,mul(R,T)); // S*(R*T) → 적용: T먼저 → R → S
+
+        // ghost (identity shape)
+        drawShape(c,[1,0,0,0,1,0],'rgba(171,107,219,0.04)','rgba(171,107,219,0.12)');
+
+        // transformed grid + shape
+        drawAffineGrid(c,M);
+        var fillC=useSRT?'rgba(131,193,103,0.12)':'rgba(252,98,85,0.12)';
+        var strokeC=useSRT?'rgba(131,193,103,0.45)':'rgba(252,98,85,0.45)';
+        drawShape(c,M,fillC,strokeC);
+
+        // basis vectors from transformed origin
+        var o=affine(M,{x:0,y:0});
+        var e1=affine(M,{x:1,y:0}),e2=affine(M,{x:0,y:1});
+        c.drawVectorFrom(o,e1,c.colors.vecA,"e₁'");
+        c.drawVectorFrom(o,e2,c.colors.vecB,"e₂'");
+
+        // transformed origin dot
+        var os=c.toS(o);
+        c.ctx.beginPath();c.ctx.arc(os.x,os.y,5,0,Math.PI*2);
+        c.ctx.fillStyle=useSRT?c.colors.vecC:c.colors.proj;c.ctx.fill();
+
+        // panel
+        document.getElementById('srtOrder').innerHTML=useSRT?
+            '<span class="vc">T · R · S</span> (적용: S→R→T = 정상)':
+            '<span style="color:var(--negative)">S · R · T</span> (적용: T→R→S = 비정상!)';
+        document.getElementById('srtOrigin').innerHTML=
+            '(0,0) → <strong>('+fmt(o.x)+', '+fmt(o.y)+')</strong>';
+    }
+    render();
+})();
+  </script>
+</body>
+</html>

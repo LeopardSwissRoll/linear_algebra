@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 3 — View 변환 & LookAt | MyAcademy</title>
+    <link rel="stylesheet" href="style.css">
+    <script>
+    MathJax = { tex: { inlineMath: [['$','$']], displayMath: [['$$','$$']] }, svg: { fontCache: 'global' } };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+    <style>
+        .dual-view { display:flex; gap:1rem; flex-wrap:wrap; justify-content:center; }
+        .dual-view-half { flex:1; min-width:280px; max-width:420px; }
+        .dual-view-half canvas { max-width:100%; height:auto; border-radius:10px; }
+        .view-label { text-align:center; font-weight:700; font-size:0.9rem; margin-bottom:0.4rem; padding:0.3rem 0.6rem; border-radius:6px; }
+        .view-label.world { background:rgba(232,200,64,0.08); color:var(--vec-a); }
+        .view-label.camera { background:rgba(88,196,221,0.08); color:var(--vec-b); }
+        .t-slider-row { display:flex; align-items:center; gap:0.8rem; margin-top:0.4rem; font-size:0.88rem; }
+        .t-slider-row input[type="range"] { flex:1; max-width:220px; accent-color:var(--accent); }
+        .t-slider-row .t-val { font-family:var(--font-code); font-weight:700; color:var(--accent); min-width:3rem; }
+        .slider-label { min-width:3rem; font-weight:600; font-size:0.82rem; }
+    </style>
+</head>
+<body>
+  <header class="header">
+    <button class="hamburger" id="hamburger" aria-label="메뉴"><span></span><span></span><span></span></button>
+    <div class="header-logo">MyAcademy<span class="subtitle">선형대수 × 그래픽스 × AI</span></div>
+    <button class="theme-toggle" id="themeToggle" aria-label="테마 전환"><span class="theme-toggle-icon"></span></button>
+  </header>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <nav class="sidebar" id="sidebar"></nav>
+
+  <main class="main-content">
+    <div class="content">
+      <div class="page-title">
+        <div class="tag tag-lesson">PHASE 3</div>
+        <h1>View 변환 & LookAt</h1>
+        <p class="page-desc">카메라를 원점으로 옮기기 = 세계를 반대로 옮기기</p>
+      </div>
+
+      <!-- ══════════ 1. 직관 ══════════ -->
+      <section>
+        <h2 id="intuition">View 변환의 직관</h2>
+        <div class="info-cards">
+          <div class="info-card">
+            <h4>카메라도 오브젝트다</h4>
+            <p>위치, 바라보는 방향, 위쪽 방향이 있을 뿐. 특별하지 않다.</p>
+          </div>
+          <div class="info-card">
+            <h4>트릭: 세계를 반대로 옮긴다</h4>
+            <p>카메라가 오른쪽으로 → 세계를 왼쪽으로. $V = M_{camera}^{-1}$</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ 2. LookAt 유도 ══════════ -->
+      <section>
+        <h2 id="lookat">LookAt 행렬 유도</h2>
+        <div class="formula-box">
+          <p style="font-weight:600;color:var(--text-primary);margin-bottom:0.5rem;">입력: eye(카메라 위치), target(바라보는 점), up(위쪽 힌트)</p>
+          <p style="margin-bottom:0.3rem;">1. $\vec{z} = \text{normalize}(\text{target} - \text{eye})$ &nbsp; <span style="color:var(--text-secondary);font-size:0.85rem;">(DX 왼손: 바라보는 방향)</span></p>
+          <p style="margin-bottom:0.3rem;">2. $\vec{x} = \text{normalize}(\text{up} \times \vec{z})$ &nbsp; <span style="color:var(--text-secondary);font-size:0.85rem;">(카메라의 오른쪽)</span></p>
+          <p style="margin-bottom:0.5rem;">3. $\vec{y} = \vec{z} \times \vec{x}$ &nbsp; <span style="color:var(--text-secondary);font-size:0.85rem;">(카메라의 진짜 위)</span></p>
+          $$V = \begin{bmatrix} x_x & x_y & x_z & -\vec{x}\cdot\text{eye} \\ y_x & y_y & y_z & -\vec{y}\cdot\text{eye} \\ z_x & z_y & z_z & -\vec{z}\cdot\text{eye} \\ 0 & 0 & 0 & 1 \end{bmatrix}$$
+          <p class="note">회전(카메라 축 정렬) + 이동(카메라를 원점으로) = $R_{align} \cdot T(-\text{eye})$.</p>
+        </div>
+      </section>
+
+      <!-- ══════════ 3. 인터랙티브 ══════════ -->
+      <section>
+        <h2 id="interactive">2D 카메라 체감하기</h2>
+        <p>왼쪽은 <strong>월드 기준</strong> — 카메라가 어디 있는지 보인다. 오른쪽은 <strong>카메라 기준</strong> — View 행렬 적용 후. 카메라를 움직이면 세계가 반대로 움직이는 걸 확인해봐.</p>
+
+        <div class="dual-view">
+          <div class="dual-view-half">
+            <div class="view-label world">월드 뷰 — 카메라가 보임</div>
+            <canvas id="cvsWorld" width="400" height="400"></canvas>
+          </div>
+          <div class="dual-view-half">
+            <div class="view-label camera">카메라 뷰 — 세계가 움직임</div>
+            <canvas id="cvsCamera" width="400" height="400"></canvas>
+          </div>
+        </div>
+        <div style="max-width:600px;margin:0.8rem auto 0;">
+          <div class="t-slider-row"><span class="slider-label">eye X</span><input type="range" id="eyeX" min="-5" max="5" step="0.1" value="3"><span class="t-val" id="eyeXV">3.0</span></div>
+          <div class="t-slider-row"><span class="slider-label">eye Y</span><input type="range" id="eyeY" min="-5" max="5" step="0.1" value="2"><span class="t-val" id="eyeYV">2.0</span></div>
+          <div class="t-slider-row"><span class="slider-label">target X</span><input type="range" id="tgtX" min="-5" max="5" step="0.1" value="0"><span class="t-val" id="tgtXV">0.0</span></div>
+          <div class="t-slider-row"><span class="slider-label">target Y</span><input type="range" id="tgtY" min="-5" max="5" step="0.1" value="0"><span class="t-val" id="tgtYV">0.0</span></div>
+        </div>
+        <div class="math-panel" style="width:100%;max-width:600px;margin:1rem auto 0;min-width:unset;">
+          <h3>View 행렬 (2D 3×3 동차)</h3>
+          <div class="calc-group">
+            <div class="label">카메라 축</div>
+            <div class="calc-row" id="viewAxes"></div>
+          </div>
+          <div class="calc-group">
+            <div class="label">View 행렬</div>
+            <div class="calc-row" id="viewMat" style="line-height:1.6;"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ 4. 성질 ══════════ -->
+      <section>
+        <h2 id="properties">View 행렬의 성질</h2>
+        <div class="info-cards">
+          <div class="info-card">
+            <h4>직교 행렬 (회전 부분)</h4>
+            <p>$R^{-1} = R^T$. 카메라 축이 직교+단위이므로.</p>
+          </div>
+          <div class="info-card">
+            <h4>MVP 체인에서의 위치</h4>
+            <p>$\vec{v}_{view} = V \cdot M \cdot \vec{v}_{local}$ — Model 다음에 적용.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ 5. 직접 해보기 ══════════ -->
+      <section class="exercises">
+        <h2 id="exercises">직접 해보기</h2>
+        <ol>
+          <li><strong>카메라 이동:</strong> eye를 오른쪽으로 옮겨봐. 카메라 뷰에서 세계가 어디로 가는지?</li>
+          <li><strong>카메라 회전:</strong> target을 바꿔봐. 카메라 뷰에서 세계가 어떻게 회전하는지?</li>
+          <li><strong>LookAt 구성:</strong> eye=(5,0), target=(0,0)일 때 카메라의 forward/right 축은?</li>
+          <li><strong>View = Camera⁻¹:</strong> View 행렬의 이동 부분이 eye의 단순 음수가 아닌 이유는?</li>
+          <li><strong>MVP:</strong> Model = "오브젝트 배치", View = "세계를 카메라 기준으로". 왜 분리하면 효율적?</li>
+        </ol>
+      </section>
+    </div>
+
+    <div class="page-nav" id="page-nav"></div>
+
+    <script>
+    var PAGE_ID = "p3_03";
+    var ON_THIS_PAGE = [
+      { id: "intuition", label: "View 직관" },
+      { id: "lookat", label: "LookAt 유도" },
+      { id: "interactive", label: "2D 카메라 체감" },
+      { id: "properties", label: "성질" },
+      { id: "exercises", label: "직접 해보기" }
+    ];
+    </script>
+    <script src="nav.js"></script>
+  </main>
+
+  <script src="canvas-lib.js"></script>
+  <script>
+// ============================================================
+//  공통
+// ============================================================
+var DEG=180/Math.PI, RAD=Math.PI/180;
+function fmt(n,d){return n.toFixed(d===undefined?2:d);}
+function affine(m,v){return{x:m[0]*v.x+m[1]*v.y+m[2], y:m[3]*v.x+m[4]*v.y+m[5]};}
+
+// 씬 오브젝트 (월드 좌표로 정의)
+var SCENE_OBJS = [
+    {pts:[{x:-1,y:-1},{x:1,y:-1},{x:0,y:1}], fill:'rgba(131,193,103,0.2)', stroke:'rgba(131,193,103,0.5)', label:'A'},
+    {pts:[{x:-3,y:-2},{x:-2,y:-2},{x:-2,y:-0.5},{x:-3,y:-0.5}], fill:'rgba(171,107,219,0.2)', stroke:'rgba(171,107,219,0.5)', label:'B'},
+    {pts:[{x:2,y:-3},{x:3.5,y:-3},{x:3.5,y:-2.5},{x:2.5,y:-2.5},{x:2.5,y:-1.5},{x:2,y:-1.5}], fill:'rgba(232,200,64,0.2)', stroke:'rgba(232,200,64,0.5)', label:'C'}
+];
+
+function drawSceneObjs(c, transform) {
+    for (var i=0; i<SCENE_OBJS.length; i++) {
+        var obj = SCENE_OBJS[i];
+        var ctx = c.ctx;
+        ctx.beginPath();
+        for (var j=0; j<obj.pts.length; j++) {
+            var p = transform ? c.toS(affine(transform, obj.pts[j])) : c.toS(obj.pts[j]);
+            if (j===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);
+        }
+        ctx.closePath();
+        ctx.fillStyle = obj.fill; ctx.fill();
+        ctx.strokeStyle = obj.stroke; ctx.lineWidth = 2; ctx.stroke();
+        // label
+        var cx=0,cy=0;
+        for (var j=0;j<obj.pts.length;j++){cx+=obj.pts[j].x;cy+=obj.pts[j].y;}
+        cx/=obj.pts.length; cy/=obj.pts.length;
+        var lp = transform ? c.toS(affine(transform,{x:cx,y:cy})) : c.toS({x:cx,y:cy});
+        ctx.fillStyle = obj.stroke; ctx.font = 'bold 13px "Noto Sans KR",sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(obj.label, lp.x, lp.y);
+    }
+}
+
+// ============================================================
+//  상태
+// ============================================================
+var eye = {x:3, y:2};
+var tgt = {x:0, y:0};
+
+var sliders = {
+    ex:document.getElementById('eyeX'), ey:document.getElementById('eyeY'),
+    tx:document.getElementById('tgtX'), ty:document.getElementById('tgtY')
+};
+var vals = {
+    ex:document.getElementById('eyeXV'), ey:document.getElementById('eyeYV'),
+    tx:document.getElementById('tgtXV'), ty:document.getElementById('tgtYV')
+};
+sliders.ex.addEventListener('input',function(e){eye.x=parseFloat(e.target.value);vals.ex.textContent=fmt(eye.x,1);render();});
+sliders.ey.addEventListener('input',function(e){eye.y=parseFloat(e.target.value);vals.ey.textContent=fmt(eye.y,1);render();});
+sliders.tx.addEventListener('input',function(e){tgt.x=parseFloat(e.target.value);vals.tx.textContent=fmt(tgt.x,1);render();});
+sliders.ty.addEventListener('input',function(e){tgt.y=parseFloat(e.target.value);vals.ty.textContent=fmt(tgt.y,1);render();});
+
+// ============================================================
+//  두 캔버스
+// ============================================================
+var cW = createCanvas('cvsWorld', {width:400, height:400, unit:40});
+var cC = createCanvas('cvsCamera', {width:400, height:400, unit:40});
+
+// 월드 캔버스에서 eye/target 드래그
+function syncSlidersFromDrag(){
+    sliders.ex.value=eye.x; vals.ex.textContent=fmt(eye.x,1);
+    sliders.ey.value=eye.y; vals.ey.textContent=fmt(eye.y,1);
+    sliders.tx.value=tgt.x; vals.tx.textContent=fmt(tgt.x,1);
+    sliders.ty.value=tgt.y; vals.ty.textContent=fmt(tgt.y,1);
+}
+var dragW = cW.makeDraggable([
+    {id:'eye', get:function(){return eye;}, set:function(v){eye=v; syncSlidersFromDrag();}, color:cW.colors.vecB},
+    {id:'tgt', get:function(){return tgt;}, set:function(v){tgt=v; syncSlidersFromDrag();}, color:'#fc6255'}
+], render, {clamp:4.8});
+
+function computeView() {
+    // 2D LookAt: forward, right 계산
+    var dx = tgt.x - eye.x, dy = tgt.y - eye.y;
+    var len = Math.sqrt(dx*dx + dy*dy);
+    if (len < 0.001) { dx=0; dy=1; len=1; }
+    var fwd = {x:dx/len, y:dy/len};  // forward (카메라가 바라보는 방향)
+    var rgt = {x:fwd.y, y:-fwd.x};   // right (forward의 90° 시계 회전)
+
+    // View 행렬 (2D 3×3 동차): R_align * T(-eye)
+    // R = [rx ry 0; fx fy 0; 0 0 1] (right=x축, forward=y축)
+    // V = R * T(-eye)
+    var V = [
+        rgt.x, rgt.y, -(rgt.x*eye.x + rgt.y*eye.y),
+        fwd.x, fwd.y, -(fwd.x*eye.x + fwd.y*eye.y)
+    ];
+    return {V:V, fwd:fwd, rgt:rgt};
+}
+
+function render() {
+    var view = computeView();
+    var V = view.V, fwd = view.fwd, rgt = view.rgt;
+
+    // ── 월드 뷰 ──
+    cW.clear(); cW.drawGrid();
+    drawSceneObjs(cW, null);
+
+    // 카메라 표시
+    var es = cW.toS(eye);
+    var ctx = cW.ctx;
+
+    // FOV 부채꼴 (시야각 ~70°)
+    var fovHalf = 35 * RAD;
+    var fovLen = 3;
+    var fL = {x:eye.x + (fwd.x*Math.cos(fovHalf)-fwd.y*Math.sin(fovHalf))*fovLen,
+              y:eye.y + (fwd.x*Math.sin(fovHalf)+fwd.y*Math.cos(fovHalf))*fovLen};
+    var fR = {x:eye.x + (fwd.x*Math.cos(-fovHalf)-fwd.y*Math.sin(-fovHalf))*fovLen,
+              y:eye.y + (fwd.x*Math.sin(-fovHalf)+fwd.y*Math.cos(-fovHalf))*fovLen};
+    var sfL=cW.toS(fL), sfR=cW.toS(fR);
+    ctx.fillStyle = 'rgba(88,196,221,0.06)';
+    ctx.strokeStyle = 'rgba(88,196,221,0.2)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(es.x,es.y); ctx.lineTo(sfL.x,sfL.y); ctx.lineTo(sfR.x,sfR.y); ctx.closePath();
+    ctx.fill(); ctx.stroke();
+
+    // forward 화살표
+    cW.drawVectorFrom(eye, vadd(eye,fwd), cW.colors.vecB, 'fwd');
+    // right 화살표
+    cW.drawVectorFrom(eye, vadd(eye,vscale(rgt,0.6)), 'rgba(252,98,85,0.6)', 'rgt');
+
+    // eye → target 점선
+    cW.drawDashed(eye, tgt, 'rgba(88,196,221,0.25)', 1, [4,3]);
+
+    // 카메라 아이콘 (원)
+    ctx.beginPath(); ctx.arc(es.x, es.y, 8, 0, Math.PI*2);
+    ctx.fillStyle = cW.colors.vecB; ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 10px sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('C', es.x, es.y);
+
+    // target 점
+    cW.drawPoint(tgt, 'rgba(252,98,85,0.6)', 'target');
+
+    // 드래그 핸들
+    cW.drawHandle(eye, cW.colors.vecB, dragW.isHovered('eye'));
+    cW.drawHandle(tgt, '#fc6255', dragW.isHovered('tgt'));
+
+    // ── 카메라 뷰 ──
+    cC.clear(); cC.drawGrid();
+    drawSceneObjs(cC, V);
+
+    // 카메라 = 원점 (고정)
+    var co = cC.toS({x:0,y:0});
+    cC.ctx.beginPath(); cC.ctx.arc(co.x, co.y, 8, 0, Math.PI*2);
+    cC.ctx.fillStyle = cC.colors.vecB; cC.ctx.fill();
+    cC.ctx.strokeStyle = '#fff'; cC.ctx.lineWidth = 2; cC.ctx.stroke();
+    cC.ctx.fillStyle = '#fff'; cC.ctx.font = 'bold 10px sans-serif';
+    cC.ctx.textAlign = 'center'; cC.ctx.textBaseline = 'middle';
+    cC.ctx.fillText('C', co.x, co.y);
+    // 카메라의 forward = +y 방향 화살표
+    cC.drawVectorFrom({x:0,y:0},{x:0,y:1}, cC.colors.vecB, 'fwd');
+
+    // 패널
+    document.getElementById('viewAxes').innerHTML =
+        'forward = <span class="vb">('+fmt(fwd.x)+', '+fmt(fwd.y)+')</span>, '+
+        'right = <span style="color:var(--negative)">('+fmt(rgt.x)+', '+fmt(rgt.y)+')</span>';
+    document.getElementById('viewMat').innerHTML =
+        '['+fmt(V[0],3)+' '+fmt(V[1],3)+' '+fmt(V[2],3)+']<br>'+
+        '['+fmt(V[3],3)+' '+fmt(V[4],3)+' '+fmt(V[5],3)+']<br>[0  0  1]';
+}
+
+render();
+  </script>
+</body>
+</html>

@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 3 — 법선 벡터의 변환 | MyAcademy</title>
+    <link rel="stylesheet" href="style.css">
+    <script>
+    MathJax = { tex: { inlineMath: [['$','$']], displayMath: [['$$','$$']] }, svg: { fontCache: 'global' } };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+    <style>
+        .t-slider-row { display:flex; align-items:center; gap:0.8rem; margin-top:0.4rem; font-size:0.88rem; }
+        .t-slider-row input[type="range"] { flex:1; max-width:240px; accent-color:var(--accent); }
+        .t-slider-row .t-val { font-family:var(--font-code); font-weight:700; color:var(--accent); min-width:3rem; }
+        .slider-label { min-width:2.5rem; font-weight:600; font-size:0.82rem; }
+        .pbtn { font-size:0.78rem; padding:0.25rem 0.6rem; background:var(--bg-surface); border:1px solid var(--border); border-radius:4px; cursor:pointer; color:var(--text-primary); font-family:inherit; transition:all 0.2s; }
+        .pbtn:hover, .pbtn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+        .cmp-table { width:100%; border-collapse:collapse; margin:1rem 0; font-size:0.88rem; }
+        .cmp-table th, .cmp-table td { padding:0.5rem 0.6rem; border:1px solid var(--border); text-align:center; }
+        .cmp-table th { background:rgba(171,107,219,0.08); color:var(--accent); font-weight:600; font-size:0.78rem; }
+        .cmp-table td:first-child { text-align:left; font-weight:600; color:var(--text-secondary); }
+    </style>
+</head>
+<body>
+  <header class="header">
+    <button class="hamburger" id="hamburger" aria-label="메뉴"><span></span><span></span><span></span></button>
+    <div class="header-logo">MyAcademy<span class="subtitle">선형대수 × 그래픽스 × AI</span></div>
+    <button class="theme-toggle" id="themeToggle" aria-label="테마 전환"><span class="theme-toggle-icon"></span></button>
+  </header>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <nav class="sidebar" id="sidebar"></nav>
+
+  <main class="main-content">
+    <div class="content">
+      <div class="page-title">
+        <div class="tag tag-lesson">PHASE 3</div>
+        <h1>법선 벡터의 변환</h1>
+        <p class="page-desc">법선에 같은 행렬을 곱하면 안 된다 — 비균등 스케일 하나면 깨진다</p>
+      </div>
+
+      <!-- ══════════ 1. 문제 ══════════ -->
+      <section>
+        <h2 id="problem">문제 — 법선이 깨진다</h2>
+        <p>법선 = 표면에 수직인 벡터. 조명의 핵심: $\text{밝기} = \max(0,\;\vec{n} \cdot \vec{L})$. 법선이 틀리면 조명이 깨진다.</p>
+        <div class="info-cards">
+          <div class="info-card">
+            <h4>균등 스케일 → OK</h4>
+            <p>모든 방향을 같은 비율로 늘리면, 수직 관계가 유지된다.</p>
+          </div>
+          <div class="info-card">
+            <h4>비균등 스케일 → 깨짐!</h4>
+            <p>x만 2배로 늘리면 법선도 x 방향으로 2배 → 더 이상 수직이 아님.</p>
+          </div>
+        </div>
+
+        <div class="interactive-section" style="flex-direction:column;align-items:center;">
+          <div class="canvas-wrap">
+            <canvas id="cvsNormal" width="600" height="600"></canvas>
+            <div class="t-slider-row"><span class="slider-label">S<sub>x</sub></span><input type="range" id="nsx" min="0.5" max="3" step="0.1" value="2"><span class="t-val" id="nsxV">2.00</span></div>
+            <div class="t-slider-row"><span class="slider-label">S<sub>y</sub></span><input type="range" id="nsy" min="0.5" max="3" step="0.1" value="1"><span class="t-val" id="nsyV">1.00</span></div>
+          </div>
+          <div class="math-panel" style="width:100%;max-width:600px;min-width:unset;">
+            <h3>법선 비교</h3>
+            <div class="calc-group">
+              <div class="label">M으로 변환한 법선 (빨강 — 잘못됨)</div>
+              <div class="calc-row" id="nWrong"></div>
+            </div>
+            <div class="calc-group">
+              <div class="label">(M⁻¹)ᵀ로 변환한 법선 (초록 — 올바름)</div>
+              <div class="calc-row" id="nCorrect"></div>
+            </div>
+            <div class="calc-group" style="padding-top:0.8rem;border-top:1px solid var(--border);">
+              <div class="label">접선과의 내적 (0이면 수직)</div>
+              <div class="calc-row" id="nDots"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ 2. 유도 ══════════ -->
+      <section>
+        <h2 id="derivation">왜 $(M^{-1})^T$인가</h2>
+        <div class="formula-box">
+          <p style="font-weight:600;color:var(--text-primary);margin-bottom:0.5rem;">접선 $\vec{t}$에 수직인 관계를 보존해야 한다</p>
+          <p>접선: $\vec{t'} = M\vec{t}$, &nbsp; 법선: $\vec{n'} = ?\vec{n}$</p>
+          <p>수직 조건: $\vec{n'}^T \vec{t'} = 0$</p>
+          <p>$\vec{n'}^T (M\vec{t}) = (\vec{n'}^T M)\vec{t} = 0$</p>
+          <p>이것이 $\vec{n}^T \vec{t} = 0$과 같으려면:</p>
+          $$\boxed{\vec{n'} = (M^{-1})^T \vec{n}}$$
+          <p class="note">4줄 유도. 스케일이 커진 방향의 법선은 오히려 줄어야 수직이 유지된다.</p>
+        </div>
+      </section>
+
+      <!-- ══════════ 3. 특수 케이스 ══════════ -->
+      <section>
+        <h2 id="special">특수 케이스</h2>
+        <table class="cmp-table">
+          <thead><tr><th>변환</th><th>$(M^{-1})^T$</th><th>법선도 $M$으로 OK?</th></tr></thead>
+          <tbody>
+            <tr><td>균등 스케일 $sI$</td><td>$\frac{1}{s}I$</td><td>O (정규화하면 같음)</td></tr>
+            <tr><td>회전 $R$</td><td>$R$ 자체</td><td>O (직교행렬)</td></tr>
+            <tr><td>비균등 스케일</td><td>$\text{diag}(1/s_x, 1/s_y, 1/s_z)$</td><td><strong>X — 깨짐!</strong></td></tr>
+          </tbody>
+        </table>
+        <div class="callout">
+          <div class="callout-title">실전 팁</div>
+          <p style="margin-bottom:0;">직교 행렬(회전, 반사)이면 $M^{-1} = M^T$이므로 $(M^{-1})^T = M$ — 같은 행렬로 OK. 비균등 스케일이 포함된 경우만 역전치가 필요.</p>
+        </div>
+      </section>
+
+      <!-- ══════════ 4. 조명 비교 ══════════ -->
+      <section>
+        <h2 id="lighting">조명 Before/After</h2>
+        <p>타원 표면의 여러 점에서 법선을 구하고, Lambert 조명을 적용. 광원 방향을 드래그해봐.</p>
+
+        <div class="interactive-section" style="flex-direction:column;align-items:center;">
+          <div class="canvas-wrap">
+            <canvas id="cvsLighting" width="600" height="600"></canvas>
+            <div style="display:flex;gap:0.5rem;margin-top:0.5rem;justify-content:center;">
+              <button class="pbtn active" id="btnCorrectN">올바른 법선 (M⁻¹)ᵀ</button>
+              <button class="pbtn" id="btnWrongN">잘못된 법선 M</button>
+            </div>
+          </div>
+          <div class="math-panel" style="width:100%;max-width:600px;min-width:unset;">
+            <h3>Lambert 조명</h3>
+            <div class="calc-group">
+              <div class="label">광원 방향 L</div>
+              <div class="calc-row" id="lightDir"></div>
+            </div>
+            <div class="calc-group">
+              <div class="label">밝기 = max(0, n · L)</div>
+              <div class="calc-row" id="lightMode"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ 5. HLSL ══════════ -->
+      <section>
+        <h2 id="hlsl">실전: 셰이더 코드</h2>
+        <div class="formula-box">
+          <p style="font-family:var(--font-code);font-size:0.88rem;line-height:1.8;margin:0;">
+            <span style="color:var(--text-secondary);">// 정점 셰이더 (DX11 HLSL)</span><br>
+            float3 worldNormal = mul((float3x3)<span style="color:var(--vec-b);">transpose</span>(<span style="color:var(--vec-a);">invWorld</span>), input.normal);<br>
+            worldNormal = <span style="color:var(--vec-c);">normalize</span>(worldNormal);
+          </p>
+          <p class="note"><span style="color:var(--vec-a);">invWorld</span> = $M^{-1}$. <span style="color:var(--vec-b);">transpose</span> = $(M^{-1})^T$. <span style="color:var(--vec-c);">normalize</span> = 스케일 영향 제거.</p>
+        </div>
+        <div class="callout">
+          <div class="callout-title">최적화</div>
+          <p style="margin-bottom:0;">균등 스케일만 쓰면 <code>mul((float3x3)world, normal)</code>로 충분. CPU에서 역전치를 미리 계산해서 상수 버퍼로 전달하는 게 일반적.</p>
+        </div>
+      </section>
+
+      <!-- ══════════ 6. 직접 해보기 ══════════ -->
+      <section class="exercises">
+        <h2 id="exercises">직접 해보기</h2>
+        <ol>
+          <li><strong>깨지는 확인:</strong> 캔버스 ①에서 Sx=3, Sy=1로 놓고 빨간 법선이 표면에 수직인지 확인.</li>
+          <li><strong>균등이면 OK:</strong> Sx=Sy=2로 놓으면 빨간/초록 법선이 겹치는 걸 확인.</li>
+          <li><strong>조명 비교:</strong> 캔버스 ②에서 "잘못된 법선" 토글. 어디가 가장 차이 나는지?</li>
+          <li><strong>유도 복습:</strong> $\vec{n'}^T M \vec{t} = \vec{n}^T \vec{t}$에서 왜 $(M^{-1})^T$가 나오는지 적어봐.</li>
+          <li><strong>HLSL:</strong> transpose(invWorld)가 $(M^{-1})^T$인 이유를 코드와 수식으로 대응시켜봐.</li>
+        </ol>
+      </section>
+    </div>
+
+    <div class="page-nav" id="page-nav"></div>
+
+    <script>
+    var PAGE_ID = "p3_05";
+    var ON_THIS_PAGE = [
+      { id: "problem", label: "문제: 법선이 깨진다" },
+      { id: "derivation", label: "유도" },
+      { id: "special", label: "특수 케이스" },
+      { id: "lighting", label: "조명 Before/After" },
+      { id: "hlsl", label: "HLSL 코드" },
+      { id: "exercises", label: "직접 해보기" }
+    ];
+    </script>
+    <script src="nav.js"></script>
+  </main>
+
+  <script src="canvas-lib.js"></script>
+  <script>
+var DEG=180/Math.PI, RAD=Math.PI/180;
+function fmt(n,d){return n.toFixed(d===undefined?2:d);}
+
+// ============================================================
+//  캔버스 1 — 법선 비교 (M vs (M⁻¹)ᵀ)
+// ============================================================
+(function(){
+    var c=createCanvas('cvsNormal',{width:600,height:600,unit:50});
+    var sx=2, sy=1;
+    var sxS=document.getElementById('nsx'),syS=document.getElementById('nsy');
+    var sxV=document.getElementById('nsxV'),syV=document.getElementById('nsyV');
+    sxS.addEventListener('input',function(e){sx=parseFloat(e.target.value);sxV.textContent=fmt(sx);render();});
+    syS.addEventListener('input',function(e){sy=parseFloat(e.target.value);syV.textContent=fmt(sy);render();});
+
+    // 드래그: 타원 위의 점 위치 (각도로)
+    var angle=Math.PI/4; // 45°
+    var dragPt={x:Math.cos(angle)*sx, y:Math.sin(angle)*sy};
+
+    var dragH=c.makeDraggable([
+        {id:'P',get:function(){return dragPt;},set:function(v){
+            // 타원 위로 스냅: 가장 가까운 타원 점 찾기
+            var a=Math.atan2(v.y/sy, v.x/sx);
+            angle=a;
+            dragPt.x=Math.cos(a)*sx; dragPt.y=Math.sin(a)*sy;
+        },color:c.colors.vecC}
+    ],render);
+
+    function render(){
+        c.clear(); c.drawGrid();
+        var ctx=c.ctx;
+
+        // 변환된 타원 (원을 sx,sy로 스케일)
+        ctx.strokeStyle='rgba(171,107,219,0.35)'; ctx.lineWidth=2;
+        ctx.beginPath();
+        for(var i=0;i<=64;i++){
+            var a=i*Math.PI*2/64;
+            var p=c.toS({x:Math.cos(a)*sx, y:Math.sin(a)*sy});
+            if(i===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);
+        }
+        ctx.closePath(); ctx.stroke();
+
+        // 원래 단위원 (연한 점선)
+        var o=c.toS({x:0,y:0});
+        ctx.strokeStyle='rgba(171,107,219,0.1)'; ctx.lineWidth=1; ctx.setLineDash([4,3]);
+        ctx.beginPath(); ctx.arc(o.x,o.y,c.UNIT,0,Math.PI*2); ctx.stroke();
+        ctx.setLineDash([]);
+
+        // 타원 위의 점 P
+        dragPt.x=Math.cos(angle)*sx; dragPt.y=Math.sin(angle)*sy;
+        c.drawPoint(dragPt,c.colors.vecC,'P');
+        c.drawHandle(dragPt,c.colors.vecC,dragH.isHovered('P'));
+
+        // 원래 법선 (단위원 위에서: n = (cos θ, sin θ))
+        var origN={x:Math.cos(angle), y:Math.sin(angle)};
+
+        // M으로 변환한 법선 (잘못됨): M*n = (sx*nx, sy*ny)
+        var wrongN={x:sx*origN.x, y:sy*origN.y};
+        var wrongMag=mag(wrongN);
+        if(wrongMag>0.01){wrongN.x/=wrongMag; wrongN.y/=wrongMag;}
+
+        // (M⁻¹)ᵀ로 변환한 법선 (올바름): diag(1/sx,1/sy)*n = (nx/sx, ny/sy)
+        var correctN={x:origN.x/sx, y:origN.y/sy};
+        var correctMag=mag(correctN);
+        if(correctMag>0.01){correctN.x/=correctMag; correctN.y/=correctMag;}
+
+        // 접선 (타원 위에서: t = (-sx*sinθ, sy*cosθ) 정규화)
+        var tangent={x:-sx*Math.sin(angle), y:sy*Math.cos(angle)};
+        var tMag=mag(tangent);
+        if(tMag>0.01){tangent.x/=tMag; tangent.y/=tMag;}
+
+        // 접선 시각화 (연한 회색)
+        var tLen=1.5;
+        c.drawDashed(vadd(dragPt,vscale(tangent,-tLen)), vadd(dragPt,vscale(tangent,tLen)),
+            'rgba(200,200,220,0.25)', 1.5, [5,3]);
+
+        // 잘못된 법선 (빨강)
+        var nLen=1.8;
+        c.drawVectorFrom(dragPt, vadd(dragPt,vscale(wrongN,nLen)), c.colors.proj, 'Mn');
+
+        // 올바른 법선 (초록)
+        c.drawVectorFrom(dragPt, vadd(dragPt,vscale(correctN,nLen)), c.colors.vecC, "(M⁻¹)ᵀn");
+
+        // 패널
+        var dotWrong=wrongN.x*tangent.x+wrongN.y*tangent.y;
+        var dotCorrect=correctN.x*tangent.x+correctN.y*tangent.y;
+        document.getElementById('nWrong').innerHTML=
+            '<span style="color:var(--negative)">('+fmt(wrongN.x)+', '+fmt(wrongN.y)+')</span>';
+        document.getElementById('nCorrect').innerHTML=
+            '<span class="vc">('+fmt(correctN.x)+', '+fmt(correctN.y)+')</span>';
+        document.getElementById('nDots').innerHTML=
+            'Mn · t = <span style="color:var(--negative)">'+fmt(dotWrong,4)+'</span>' +
+            (Math.abs(dotWrong)>0.01?' (수직 아님!)':'') +
+            ' &nbsp;|&nbsp; (M⁻¹)ᵀn · t = <span class="vc">'+fmt(dotCorrect,4)+'</span> ✓';
+    }
+    render();
+})();
+
+// ============================================================
+//  캔버스 2 — 조명 Before/After
+// ============================================================
+(function(){
+    var c=createCanvas('cvsLighting',{width:600,height:600,unit:50});
+    var sx=2.5, sy=1;
+    var useCorrect=true;
+    var lightDir={x:0.707, y:0.707}; // 정규화된 광원 방향
+
+    document.getElementById('btnCorrectN').addEventListener('click',function(){
+        useCorrect=true;this.classList.add('active');document.getElementById('btnWrongN').classList.remove('active');render();
+    });
+    document.getElementById('btnWrongN').addEventListener('click',function(){
+        useCorrect=false;this.classList.add('active');document.getElementById('btnCorrectN').classList.remove('active');render();
+    });
+
+    // 광원 드래그
+    var dragL=c.makeDraggable([
+        {id:'L',get:function(){return vscale(lightDir,3);},set:function(v){
+            var m=mag(v);
+            if(m>0.1){lightDir.x=v.x/m;lightDir.y=v.y/m;}
+        },color:c.colors.vecA}
+    ],render,{clamp:4});
+
+    function render(){
+        c.clear(); c.drawGrid();
+        var ctx=c.ctx;
+
+        // 타원 표면에 Lambert 조명
+        var SEGS=80;
+        for(var i=0;i<SEGS;i++){
+            var a0=i*Math.PI*2/SEGS, a1=(i+1)*Math.PI*2/SEGS;
+            var p0={x:Math.cos(a0)*sx,y:Math.sin(a0)*sy};
+            var p1={x:Math.cos(a1)*sx,y:Math.sin(a1)*sy};
+            var mid=(a0+a1)/2;
+
+            // 법선 계산
+            var origN={x:Math.cos(mid), y:Math.sin(mid)};
+            var n;
+            if(useCorrect){
+                n={x:origN.x/sx, y:origN.y/sy};
+            } else {
+                n={x:sx*origN.x, y:sy*origN.y};
+            }
+            var nM=mag(n);
+            if(nM>0.01){n.x/=nM; n.y/=nM;}
+
+            var lambert=Math.max(0, n.x*lightDir.x+n.y*lightDir.y);
+            var brightness=Math.floor(40+lambert*180);
+
+            var s0=c.toS(p0),s1=c.toS(p1),so=c.toS({x:0,y:0});
+            ctx.fillStyle=useCorrect?
+                'rgb('+Math.floor(brightness*0.5)+','+brightness+','+Math.floor(brightness*0.4)+')':
+                'rgb('+brightness+','+Math.floor(brightness*0.4)+','+Math.floor(brightness*0.4)+')';
+            ctx.beginPath();ctx.moveTo(so.x,so.y);ctx.lineTo(s0.x,s0.y);ctx.lineTo(s1.x,s1.y);ctx.closePath();ctx.fill();
+        }
+
+        // 타원 윤곽
+        ctx.strokeStyle='rgba(200,200,220,0.3)';ctx.lineWidth=1;
+        ctx.beginPath();
+        for(var i=0;i<=64;i++){
+            var a=i*Math.PI*2/64;
+            var p=c.toS({x:Math.cos(a)*sx,y:Math.sin(a)*sy});
+            if(i===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);
+        }
+        ctx.closePath();ctx.stroke();
+
+        // 법선 몇 개 표시
+        for(var i=0;i<8;i++){
+            var a=i*Math.PI*2/8;
+            var pt={x:Math.cos(a)*sx, y:Math.sin(a)*sy};
+            var origN={x:Math.cos(a),y:Math.sin(a)};
+            var n;
+            if(useCorrect){n={x:origN.x/sx,y:origN.y/sy};}
+            else{n={x:sx*origN.x,y:sy*origN.y};}
+            var nM=mag(n);if(nM>0.01){n.x/=nM;n.y/=nM;}
+            var nColor=useCorrect?'rgba(131,193,103,0.6)':'rgba(252,98,85,0.6)';
+            c.drawVectorFrom(pt,vadd(pt,vscale(n,1)),nColor,'');
+        }
+
+        // 광원 방향 화살표
+        var lEnd=vscale(lightDir,3);
+        c.drawVector(lEnd,c.colors.vecA,'L');
+        c.drawHandle(lEnd,c.colors.vecA,dragL.isHovered('L'));
+
+        // 패널
+        document.getElementById('lightDir').innerHTML=
+            '<span class="va">('+fmt(lightDir.x)+', '+fmt(lightDir.y)+')</span>';
+        document.getElementById('lightMode').innerHTML=useCorrect?
+            '<span class="vc">(M⁻¹)ᵀ 법선 사용 — 올바른 조명</span>':
+            '<span style="color:var(--negative)">M 법선 사용 — 잘못된 조명!</span>';
+    }
+    render();
+})();
+  </script>
+</body>
+</html>

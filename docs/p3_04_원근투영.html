@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 3 — 원근 투영 | MyAcademy</title>
+    <link rel="stylesheet" href="style.css">
+    <script>
+    MathJax = { tex: { inlineMath: [['$','$']], displayMath: [['$$','$$']] }, svg: { fontCache: 'global' } };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+    <style>
+        .t-slider-row { display:flex; align-items:center; gap:0.8rem; margin-top:0.4rem; font-size:0.88rem; }
+        .t-slider-row input[type="range"] { flex:1; max-width:240px; accent-color:var(--accent); }
+        .t-slider-row .t-val { font-family:var(--font-code); font-weight:700; color:var(--accent); min-width:3rem; }
+        .slider-label { min-width:3rem; font-weight:600; font-size:0.82rem; }
+        .dual-proj { display:flex; gap:1rem; flex-wrap:wrap; justify-content:center; }
+        .dual-proj-half { flex:1; min-width:260px; max-width:420px; }
+        .dual-proj-half canvas { max-width:100%; height:auto; border-radius:10px; }
+        .proj-label { text-align:center; font-weight:700; font-size:0.88rem; margin-bottom:0.4rem; padding:0.3rem; border-radius:6px; }
+        .proj-label.frustum { background:rgba(232,200,64,0.08); color:var(--vec-a); }
+        .proj-label.ndc { background:rgba(131,193,103,0.08); color:var(--positive); }
+    </style>
+</head>
+<body>
+  <header class="header">
+    <button class="hamburger" id="hamburger" aria-label="메뉴"><span></span><span></span><span></span></button>
+    <div class="header-logo">MyAcademy<span class="subtitle">선형대수 × 그래픽스 × AI</span></div>
+    <button class="theme-toggle" id="themeToggle" aria-label="테마 전환"><span class="theme-toggle-icon"></span></button>
+  </header>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <nav class="sidebar" id="sidebar"></nav>
+
+  <main class="main-content">
+    <div class="content">
+      <div class="page-title">
+        <div class="tag tag-lesson">PHASE 3</div>
+        <h1>원근 투영</h1>
+        <p class="page-desc">3D 세계를 2D 화면으로. "먼 것이 작아지는" 원리를 수학으로 유도한다.</p>
+      </div>
+
+      <!-- ══════════ 1. 왜 투영 ══════════ -->
+      <section>
+        <h2 id="why">왜 투영이 필요한가</h2>
+        <div class="info-cards">
+          <div class="info-card">
+            <h4>직교 투영 (Orthographic)</h4>
+            <p>z 무시. 먼 것이 안 작아짐. CAD, 2D 게임, UI.</p>
+          </div>
+          <div class="info-card">
+            <h4>원근 투영 (Perspective)</h4>
+            <p>먼 것이 작아진다. 현실적. 3D 게임, 렌더링.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ 2. 직관 ══════════ -->
+      <section>
+        <h2 id="intuition">원근의 직관 — 측면도</h2>
+        <div class="formula-box">
+          $$x_{screen} = \frac{x}{z}, \quad y_{screen} = \frac{y}{z}$$
+          <p class="note">물체가 거리 $z$에 있으면, 화면 위 크기 $\propto 1/z$. 이것이 <strong>perspective divide</strong>.</p>
+        </div>
+
+        <div class="interactive-section" style="flex-direction:column;align-items:center;">
+          <div class="canvas-wrap">
+            <canvas id="cvsSide" width="600" height="400"></canvas>
+            <div class="t-slider-row"><span class="slider-label">오브젝트 z</span><input type="range" id="objZ" min="1.5" max="9" step="0.1" value="4"><span class="t-val" id="objZV">4.0</span></div>
+            <div class="t-slider-row"><span class="slider-label">오브젝트 x</span><input type="range" id="objX" min="-3" max="3" step="0.1" value="1.5"><span class="t-val" id="objXV">1.5</span></div>
+          </div>
+          <div class="math-panel" style="width:100%;max-width:600px;min-width:unset;">
+            <h3>Perspective Divide</h3>
+            <div class="calc-group">
+              <div class="label">3D 좌표</div>
+              <div class="calc-row" id="sideCoord"></div>
+            </div>
+            <div class="calc-group">
+              <div class="label">x / z = 투영 위치</div>
+              <div class="calc-row" id="sideProj"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ 3. 투영 행렬 ══════════ -->
+      <section>
+        <h2 id="ortho">직교 투영 행렬</h2>
+        <div class="formula-box">
+          <p style="font-weight:600;color:var(--text-primary);margin-bottom:0.3rem;">직교 투영: 박스 → NDC (스케일 + 이동)</p>
+          $$P_{ortho} = \begin{bmatrix} \frac{2}{r-l} & 0 & 0 & -\frac{r+l}{r-l} \\ 0 & \frac{2}{t-b} & 0 & -\frac{t+b}{t-b} \\ 0 & 0 & \frac{1}{f-n} & -\frac{n}{f-n} \\ 0 & 0 & 0 & 1 \end{bmatrix}$$
+          <p class="note">DirectX NDC: x,y ∈ [-1,1], <strong>z ∈ [0,1]</strong>. 먼 것이 안 작아짐 — 그냥 박스를 정규화.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2 id="matrix">원근 투영 행렬 유도</h2>
+
+        <h3>핵심 아이디어</h3>
+        <div class="formula-box">
+          <p style="font-weight:600;color:var(--text-primary);">행렬 곱의 결과 $w'$에 $z$를 넣고, GPU가 $w'$로 나눈다.</p>
+          $$\begin{bmatrix} ? \\ ? \\ ? \\ z \end{bmatrix} \xrightarrow{\div w'} \begin{bmatrix} ?/z \\ ?/z \\ ?/z \\ 1 \end{bmatrix}$$
+          <p class="note">동차 좌표의 진짜 힘 — $w \neq 1$을 허용하면 나눗셈이 행렬 곱이 된다.</p>
+        </div>
+
+        <h3>DirectX 원근 투영 행렬</h3>
+        <div class="formula-box">
+          <p style="margin-bottom:0.3rem;">$f = 1/\tan(\text{fov}/2)$, &nbsp; $n = \text{near}$, &nbsp; $F = \text{far}$</p>
+          $$P = \begin{bmatrix} \frac{f}{\text{aspect}} & 0 & 0 & 0 \\ 0 & f & 0 & 0 \\ 0 & 0 & \frac{F}{F-n} & -\frac{nF}{F-n} \\ 0 & 0 & 1 & 0 \end{bmatrix}$$
+          <p class="note">4행의 $[0\;0\;1\;0]$이 $w' = z$를 만든다. <strong>DirectX NDC: z ∈ [0, 1]</strong>. OpenGL은 z ∈ [-1, 1]이라 3행이 다르다.</p>
+        </div>
+      </section>
+
+      <!-- ══════════ 4. frustum → NDC ══════════ -->
+      <section>
+        <h2 id="frustum">Frustum → NDC 변환</h2>
+        <p>왼쪽은 카메라 공간의 frustum(부채꼴), 오른쪽은 NDC(정규화 직사각형).</p>
+
+        <div class="dual-proj">
+          <div class="dual-proj-half">
+            <div class="proj-label frustum">Frustum (측면도)</div>
+            <canvas id="cvsFrustum" width="400" height="400"></canvas>
+          </div>
+          <div class="dual-proj-half">
+            <div class="proj-label ndc">NDC (z ∈ [0, 1])</div>
+            <canvas id="cvsNDC" width="400" height="400"></canvas>
+          </div>
+        </div>
+        <div style="max-width:600px;margin:0.8rem auto 0;">
+          <div class="t-slider-row"><span class="slider-label">FOV</span><input type="range" id="fov" min="20" max="120" step="1" value="60"><span class="t-val" id="fovV">60°</span></div>
+          <div class="t-slider-row"><span class="slider-label">near</span><input type="range" id="nearP" min="0.5" max="3" step="0.1" value="1"><span class="t-val" id="nearV">1.0</span></div>
+          <div class="t-slider-row"><span class="slider-label">far</span><input type="range" id="farP" min="4" max="15" step="0.5" value="10"><span class="t-val" id="farV">10.0</span></div>
+        </div>
+      </section>
+
+      <!-- ══════════ 5. z 정밀도 ══════════ -->
+      <section>
+        <h2 id="depth">z 버퍼와 깊이 정밀도</h2>
+        <div class="callout">
+          <div class="callout-title">z 매핑은 비선형</div>
+          <p>near → z=0, far → z=1. 하지만 가까운 곳에 정밀도가 집중되고 먼 곳은 정밀도가 낮다. near를 너무 작게 하면 안 된다 (정밀도 낭비). far/near 비율이 클수록 z-fighting 위험.</p>
+        </div>
+        <div class="callout">
+          <div class="callout-title">DirectX vs OpenGL</div>
+          <p style="margin-bottom:0;"><strong>DX: z ∈ [0, 1]</strong>. OpenGL: z ∈ [-1, 1]. 행렬의 3행이 달라진다. 코드를 옮길 때 가장 흔한 버그 원인 중 하나.</p>
+        </div>
+      </section>
+
+      <!-- ══════════ 6. 직접 해보기 ══════════ -->
+      <section class="exercises">
+        <h2 id="exercises">직접 해보기</h2>
+        <ol>
+          <li><strong>직관 확인:</strong> 캔버스 ①에서 오브젝트를 멀리 보내봐 (z↑). near plane 위 투영이 중앙으로 모이는 걸 확인.</li>
+          <li><strong>FOV 실험:</strong> 캔버스 ②에서 FOV를 30° → 90° → 120°. frustum 모양과 왜곡 관계.</li>
+          <li><strong>near/far:</strong> near를 0.5로, far를 15로 놓아봐. NDC에서 점들이 어떻게 분포하는지.</li>
+          <li><strong>행렬 읽기:</strong> 원근 투영 행렬에서 $w' = z$가 되는 이유는 4행의 어디 때문?</li>
+          <li><strong>z 정밀도:</strong> near=0.01, far=1000이면 어떤 문제가 생길지 상상해봐.</li>
+        </ol>
+      </section>
+    </div>
+
+    <div class="page-nav" id="page-nav"></div>
+
+    <script>
+    var PAGE_ID = "p3_04";
+    var ON_THIS_PAGE = [
+      { id: "why", label: "왜 투영" },
+      { id: "intuition", label: "원근 직관" },
+      { id: "ortho", label: "직교 투영" },
+      { id: "matrix", label: "원근 투영 유도" },
+      { id: "frustum", label: "Frustum → NDC" },
+      { id: "depth", label: "z 정밀도" },
+      { id: "exercises", label: "직접 해보기" }
+    ];
+    </script>
+    <script src="nav.js"></script>
+  </main>
+
+  <script src="canvas-lib.js"></script>
+  <script>
+var DEG=180/Math.PI, RAD=Math.PI/180;
+function fmt(n,d){return n.toFixed(d===undefined?2:d);}
+
+// ============================================================
+//  캔버스 1 — 원근 측면도 (x-z 평면)
+// ============================================================
+(function(){
+    var cvs=document.getElementById('cvsSide');
+    var ctx=cvs.getContext('2d');
+    var dpr=window.devicePixelRatio||1;
+    var W=600,H=400;
+    cvs.width=W*dpr;cvs.height=H*dpr;cvs.style.width=W+'px';cvs.style.height=H+'px';ctx.scale(dpr,dpr);
+
+    var NEAR=1, FAR=10;
+    var objZ=4, objX=1.5;
+    var zS=document.getElementById('objZ'),xS=document.getElementById('objX');
+    var zV=document.getElementById('objZV'),xV=document.getElementById('objXV');
+    zS.addEventListener('input',function(e){objZ=parseFloat(e.target.value);zV.textContent=fmt(objZ,1);render();});
+    xS.addEventListener('input',function(e){objX=parseFloat(e.target.value);xV.textContent=fmt(objX,1);render();});
+
+    // 좌표: z→오른쪽, x→위쪽. 카메라 원점 = 왼쪽 중앙
+    var OX=60, OY=H/2; // 원점 화면좌표
+    var SCALE_Z=45, SCALE_X=60; // 1단위 = px
+
+    function toS(z,x){return{x:OX+z*SCALE_Z, y:OY-x*SCALE_X};}
+
+    function render(){
+        ctx.clearRect(0,0,W,H);
+        // 배경
+        var g=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,W*0.6);
+        g.addColorStop(0,'#0e0e1f');g.addColorStop(1,'#080812');
+        ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+
+        // z축
+        ctx.strokeStyle='rgba(90,90,140,0.5)';ctx.lineWidth=1;
+        ctx.beginPath();ctx.moveTo(OX,OY);ctx.lineTo(W-20,OY);ctx.stroke();
+        ctx.fillStyle='rgba(120,120,170,0.6)';ctx.font='11px Consolas,monospace';
+        ctx.textAlign='center';ctx.textBaseline='top';
+        for(var i=1;i<=12;i++){var sx=OX+i*SCALE_Z;ctx.fillText(i,sx,OY+6);}
+        ctx.textAlign='left';ctx.fillText('z →',W-40,OY+6);
+
+        // x축
+        ctx.strokeStyle='rgba(90,90,140,0.3)';
+        ctx.beginPath();ctx.moveTo(OX,20);ctx.lineTo(OX,H-20);ctx.stroke();
+        ctx.textAlign='right';ctx.textBaseline='middle';
+        ctx.fillText('x ↑',OX-6,30);
+
+        // near/far planes
+        var nS=toS(NEAR,0), fS=toS(FAR,0);
+        ctx.strokeStyle='rgba(131,193,103,0.5)';ctx.lineWidth=2;
+        ctx.beginPath();ctx.moveTo(nS.x,30);ctx.lineTo(nS.x,H-30);ctx.stroke();
+        ctx.fillStyle='rgba(131,193,103,0.7)';ctx.font='11px "Noto Sans KR",sans-serif';
+        ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText('near',nS.x,28);
+
+        ctx.strokeStyle='rgba(252,98,85,0.4)';ctx.lineWidth=2;
+        ctx.beginPath();ctx.moveTo(fS.x,30);ctx.lineTo(fS.x,H-30);ctx.stroke();
+        ctx.fillStyle='rgba(252,98,85,0.7)';ctx.fillText('far',fS.x,28);
+
+        // frustum 부채꼴 (FOV ~60°)
+        var halfFov=30*RAD;
+        var topN=NEAR*Math.tan(halfFov), topF=FAR*Math.tan(halfFov);
+        var pNT=toS(NEAR,topN),pNB=toS(NEAR,-topN),pFT=toS(FAR,topF),pFB=toS(FAR,-topF);
+        ctx.fillStyle='rgba(232,200,64,0.03)';ctx.strokeStyle='rgba(232,200,64,0.15)';ctx.lineWidth=1;
+        ctx.beginPath();ctx.moveTo(OX,OY);ctx.lineTo(pFT.x,pFT.y);ctx.lineTo(pFB.x,pFB.y);ctx.closePath();
+        ctx.fill();ctx.stroke();
+
+        // 오브젝트 (점 + 수직선)
+        var oS=toS(objZ,objX);
+        ctx.beginPath();ctx.arc(oS.x,oS.y,6,0,Math.PI*2);
+        ctx.fillStyle='#e8c840';ctx.fill();
+
+        // 시선: 카메라→오브젝트
+        ctx.strokeStyle='rgba(232,200,64,0.3)';ctx.lineWidth=1;ctx.setLineDash([4,3]);
+        ctx.beginPath();ctx.moveTo(OX,OY);ctx.lineTo(oS.x,oS.y);ctx.stroke();ctx.setLineDash([]);
+
+        // near plane에서의 투영 위치
+        var projX=objX*(NEAR/objZ);
+        var pProj=toS(NEAR,projX);
+        ctx.beginPath();ctx.arc(pProj.x,pProj.y,5,0,Math.PI*2);
+        ctx.fillStyle='#83c167';ctx.fill();
+
+        // 투영 위치에서 수평선 (near plane 위의 위치)
+        ctx.strokeStyle='rgba(131,193,103,0.4)';ctx.lineWidth=1.5;ctx.setLineDash([3,3]);
+        ctx.beginPath();ctx.moveTo(pProj.x,pProj.y);ctx.lineTo(pProj.x,OY);ctx.stroke();ctx.setLineDash([]);
+
+        // 레이블
+        ctx.fillStyle='#e8c840';ctx.font='12px "Noto Sans KR",sans-serif';
+        ctx.textAlign='left';ctx.textBaseline='bottom';
+        ctx.fillText('('+fmt(objX,1)+', '+fmt(objZ,1)+')',oS.x+8,oS.y-4);
+
+        ctx.fillStyle='#83c167';ctx.textAlign='right';
+        ctx.fillText('proj='+fmt(projX,2),pProj.x-6,pProj.y-4);
+
+        // 패널
+        document.getElementById('sideCoord').innerHTML=
+            'x = <span class="va">'+fmt(objX,1)+'</span>, z = <span class="va">'+fmt(objZ,1)+'</span>';
+        document.getElementById('sideProj').innerHTML=
+            '<span class="va">'+fmt(objX,1)+'</span> / <span class="va">'+fmt(objZ,1)+'</span> = <span class="vc">'+fmt(projX,3)+'</span>';
+    }
+    render();
+})();
+
+// ============================================================
+//  캔버스 2+3 — Frustum → NDC
+// ============================================================
+(function(){
+    // Frustum 캔버스 (측면도: z→오른쪽, x→위쪽)
+    var cvsF=document.getElementById('cvsFrustum');
+    var ctxF=cvsF.getContext('2d');
+    var dpr=window.devicePixelRatio||1;
+    var WF=400,HF=400;
+    cvsF.width=WF*dpr;cvsF.height=HF*dpr;cvsF.style.width=WF+'px';cvsF.style.height=HF+'px';ctxF.scale(dpr,dpr);
+
+    // NDC 캔버스
+    var cvsN=document.getElementById('cvsNDC');
+    var ctxN=cvsN.getContext('2d');
+    cvsN.width=WF*dpr;cvsN.height=HF*dpr;cvsN.style.width=WF+'px';cvsN.style.height=HF+'px';ctxN.scale(dpr,dpr);
+
+    var fov=60, near=1, far=10;
+    var fovS=document.getElementById('fov'),nearS=document.getElementById('nearP'),farS=document.getElementById('farP');
+    var fovV=document.getElementById('fovV'),nearV=document.getElementById('nearV'),farV=document.getElementById('farV');
+    fovS.addEventListener('input',function(e){fov=parseInt(e.target.value);fovV.textContent=fov+'°';render();});
+    nearS.addEventListener('input',function(e){near=parseFloat(e.target.value);nearV.textContent=fmt(near,1);render();});
+    farS.addEventListener('input',function(e){far=parseFloat(e.target.value);farV.textContent=fmt(far,1);render();});
+
+    // 격자점들 (frustum 안에 배치)
+    var gridPts=[
+        {z:2,x:0.5},{z:2,x:-0.8},{z:4,x:1.2},{z:4,x:-0.5},{z:4,x:0},
+        {z:6,x:1.8},{z:6,x:-1.5},{z:6,x:0.3},
+        {z:8,x:2.5},{z:8,x:-2},{z:8,x:0},{z:8,x:1}
+    ];
+
+    function render(){
+        var halfFov=fov/2*RAD;
+        var tanHF=Math.tan(halfFov);
+
+        // ── Frustum 측면도 ──
+        ctxF.clearRect(0,0,WF,HF);
+        var g=ctxF.createRadialGradient(WF/2,HF/2,0,WF/2,HF/2,WF*0.7);
+        g.addColorStop(0,'#0e0e1f');g.addColorStop(1,'#080812');
+        ctxF.fillStyle=g;ctxF.fillRect(0,0,WF,HF);
+
+        var OX=30,OY=HF/2;
+        var SZ=(WF-60)/(far+1); // z scale
+        var SX=HF*0.35/Math.max(far*tanHF,1); // x scale
+
+        function toF(z,x){return{x:OX+z*SZ, y:OY-x*SX};}
+
+        // frustum 부채꼴
+        var nT=toF(near,near*tanHF),nB=toF(near,-near*tanHF);
+        var fT=toF(far,far*tanHF),fB=toF(far,-far*tanHF);
+        ctxF.fillStyle='rgba(232,200,64,0.04)';
+        ctxF.beginPath();ctxF.moveTo(OX,OY);ctxF.lineTo(fT.x,fT.y);ctxF.lineTo(fB.x,fB.y);ctxF.closePath();ctxF.fill();
+
+        // near/far lines
+        ctxF.strokeStyle='rgba(131,193,103,0.6)';ctxF.lineWidth=2;
+        ctxF.beginPath();ctxF.moveTo(nT.x,nT.y);ctxF.lineTo(nB.x,nB.y);ctxF.stroke();
+        ctxF.strokeStyle='rgba(252,98,85,0.5)';
+        ctxF.beginPath();ctxF.moveTo(fT.x,fT.y);ctxF.lineTo(fB.x,fB.y);ctxF.stroke();
+
+        // frustum edges
+        ctxF.strokeStyle='rgba(232,200,64,0.2)';ctxF.lineWidth=1;
+        ctxF.beginPath();ctxF.moveTo(OX,OY);ctxF.lineTo(fT.x,fT.y);ctxF.stroke();
+        ctxF.beginPath();ctxF.moveTo(OX,OY);ctxF.lineTo(fB.x,fB.y);ctxF.stroke();
+
+        // z축
+        ctxF.strokeStyle='rgba(90,90,140,0.4)';ctxF.lineWidth=1;
+        ctxF.beginPath();ctxF.moveTo(OX,OY);ctxF.lineTo(WF-10,OY);ctxF.stroke();
+
+        // 카메라 점
+        ctxF.beginPath();ctxF.arc(OX,OY,5,0,Math.PI*2);
+        ctxF.fillStyle='#58c4dd';ctxF.fill();
+
+        // 레이블
+        ctxF.fillStyle='rgba(131,193,103,0.8)';ctxF.font='10px "Noto Sans KR",sans-serif';
+        ctxF.textAlign='center';ctxF.textBaseline='top';ctxF.fillText('near',nT.x,nB.y+4);
+        ctxF.fillStyle='rgba(252,98,85,0.8)';ctxF.fillText('far',fT.x,fB.y+4);
+
+        // 격자점
+        for(var i=0;i<gridPts.length;i++){
+            var p=gridPts[i];
+            if(p.z<near||p.z>far) continue;
+            var maxX=p.z*tanHF;
+            if(Math.abs(p.x)>maxX) continue;
+            var ps=toF(p.z,p.x);
+            ctxF.beginPath();ctxF.arc(ps.x,ps.y,4,0,Math.PI*2);
+            ctxF.fillStyle='#e8c840';ctxF.fill();
+        }
+
+        // ── NDC ──
+        ctxN.clearRect(0,0,WF,HF);
+        g=ctxN.createRadialGradient(WF/2,HF/2,0,WF/2,HF/2,WF*0.7);
+        g.addColorStop(0,'#0e0e1f');g.addColorStop(1,'#080812');
+        ctxN.fillStyle=g;ctxN.fillRect(0,0,WF,HF);
+
+        // NDC 박스: x∈[-1,1], z∈[0,1]
+        var NX=60,NY=HF/2;
+        var NW=WF-120, NH=HF-100;
+        // z→오른쪽 [0,1], x→위쪽 [-1,1]
+        function toN(nz,nx){return{x:NX+nz*NW, y:NY-nx*(NH/2)};}
+
+        // 박스
+        var bl=toN(0,-1),tr=toN(1,1);
+        ctxN.strokeStyle='rgba(131,193,103,0.4)';ctxN.lineWidth=1.5;
+        ctxN.strokeRect(bl.x,tr.y,tr.x-bl.x,bl.y-tr.y);
+
+        // 축 레이블
+        ctxN.fillStyle='rgba(120,120,170,0.6)';ctxN.font='10px Consolas,monospace';
+        ctxN.textAlign='center';ctxN.textBaseline='top';
+        ctxN.fillText('0',toN(0,0).x,toN(0,0).y+4);ctxN.fillText('1',toN(1,0).x,toN(1,0).y+4);
+        ctxN.textAlign='right';ctxN.textBaseline='middle';
+        ctxN.fillText('-1',toN(0,-1).x-4,toN(0,-1).y);ctxN.fillText('1',toN(0,1).x-4,toN(0,1).y);
+        ctxN.textAlign='center';ctxN.textBaseline='top';
+        ctxN.fillText('z(NDC) →',NX+NW/2,bl.y+10);
+
+        // 격자점 → NDC
+        for(var i=0;i<gridPts.length;i++){
+            var p=gridPts[i];
+            if(p.z<near||p.z>far) continue;
+            var maxX=p.z*tanHF;
+            if(Math.abs(p.x)>maxX) continue;
+
+            // perspective divide: x_ndc = (x/z) * f / aspect = (x/z) / tanHF
+            var xNdc = (p.x / p.z) / tanHF;
+            // z_ndc (DX): far*(z-near) / (z*(far-near))
+            var zNdc = far*(p.z-near) / (p.z*(far-near));
+
+            xNdc=Math.max(-1,Math.min(1,xNdc));
+            zNdc=Math.max(0,Math.min(1,zNdc));
+
+            var ns=toN(zNdc,xNdc);
+            ctxN.beginPath();ctxN.arc(ns.x,ns.y,4,0,Math.PI*2);
+            ctxN.fillStyle='#83c167';ctxN.fill();
+        }
+    }
+    render();
+})();
+  </script>
+</body>
+</html>

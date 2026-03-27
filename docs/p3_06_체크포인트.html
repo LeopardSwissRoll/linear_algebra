@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 3 — 체크포인트 | MyAcademy</title>
+    <link rel="stylesheet" href="style.css">
+    <script>
+    MathJax = { tex: { inlineMath: [['$','$']], displayMath: [['$$','$$']] }, svg: { fontCache: 'global' } };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+    <style>
+        .score-banner { display:none; text-align:center; padding:1.2rem 1.5rem; border-radius:12px; margin-bottom:2rem; font-size:1.3rem; font-weight:700; border:1px solid var(--border); }
+        .score-banner.perfect { background:rgba(131,193,103,0.12); color:var(--positive); border-color:rgba(131,193,103,0.3); }
+        .score-banner.good { background:rgba(171,107,219,0.12); color:var(--accent); border-color:rgba(171,107,219,0.3); }
+        .score-banner.bad { background:rgba(252,98,85,0.1); color:var(--negative); border-color:rgba(252,98,85,0.25); }
+        .btn-row { display:flex; gap:1rem; justify-content:center; margin:2rem 0; flex-wrap:wrap; }
+        .btn-primary { background:var(--accent); border:none; color:#fff; padding:0.7rem 2rem; border-radius:8px; cursor:pointer; font-size:1rem; font-weight:600; font-family:inherit; transition:all 0.2s; }
+        .btn-primary:hover { filter:brightness(1.15); transform:translateY(-1px); }
+        .btn-secondary { background:var(--bg-surface); border:1px solid var(--border); color:var(--text-primary); padding:0.7rem 2rem; border-radius:8px; cursor:pointer; font-size:1rem; font-weight:600; font-family:inherit; transition:all 0.2s; }
+        .btn-secondary:hover { background:var(--bg-card); }
+        .problem-card { background:var(--bg-surface); border:1px solid var(--border); border-radius:12px; padding:1.5rem 1.8rem; margin-bottom:1.5rem; transition:border-color 0.3s; }
+        .problem-card.correct { border-color:rgba(131,193,103,0.4); }
+        .problem-card.wrong { border-color:rgba(252,98,85,0.4); }
+        .problem-num { display:inline-block; background:rgba(171,107,219,0.15); color:var(--accent); font-size:0.75rem; font-weight:700; padding:0.2rem 0.7rem; border-radius:12px; margin-bottom:0.8rem; letter-spacing:0.1em; }
+        .problem-title { font-size:1rem; font-weight:600; color:var(--text-primary); margin-bottom:0.6rem; }
+        .problem-body { font-size:0.95rem; color:var(--text-primary); margin-bottom:1rem; line-height:1.7; }
+        .problem-body .va { color:var(--vec-a); font-weight:600; }
+        .problem-body .vb { color:var(--vec-b); font-weight:600; }
+        .answer-row { display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap; }
+        .answer-row label { font-size:0.9rem; color:var(--text-secondary); font-weight:600; }
+        .answer-input { background:var(--bg-deep); border:1px solid var(--border); border-radius:6px; color:var(--text-primary); padding:0.45rem 0.6rem; font-size:1rem; font-family:var(--font-code); width:80px; outline:none; transition:border-color 0.2s; }
+        .answer-input:focus { border-color:var(--accent); }
+        .answer-input.correct-input { border-color:var(--positive); color:var(--positive); }
+        .answer-input.wrong-input { border-color:var(--negative); color:var(--negative); }
+        .result-icon { font-size:1.3rem; display:none; }
+        .result-icon.show { display:inline; }
+        .feedback { display:none; margin-top:1.2rem; padding-top:1rem; border-top:1px solid var(--border); }
+        .feedback.show { display:block; }
+        .feedback-correct { color:var(--positive); font-weight:600; font-size:0.95rem; }
+        .feedback-wrong { color:var(--negative); font-weight:600; font-size:0.95rem; margin-bottom:0.8rem; }
+        .feedback canvas { display:block; margin:0.8rem 0; border-radius:10px; }
+        .feedback .explain-text { font-size:0.88rem; color:var(--text-secondary); line-height:1.7; margin-top:0.5rem; }
+        .feedback .explain-text .val { color:var(--text-primary); font-weight:600; font-family:var(--font-code); }
+        .mat-inline { display:inline-block; font-family:var(--font-code); font-size:0.9rem; border-left:2px solid var(--text-secondary); border-right:2px solid var(--text-secondary); padding:0.1rem 0.5rem; line-height:1.5; vertical-align:middle; }
+    </style>
+</head>
+<body>
+  <header class="header">
+    <button class="hamburger" id="hamburger" aria-label="메뉴"><span></span><span></span><span></span></button>
+    <div class="header-logo">MyAcademy<span class="subtitle">선형대수 × 그래픽스 × AI</span></div>
+    <button class="theme-toggle" id="themeToggle" aria-label="테마 전환"><span class="theme-toggle-icon"></span></button>
+  </header>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <nav class="sidebar" id="sidebar"></nav>
+
+  <main class="main-content">
+    <div class="content">
+      <div class="page-title">
+        <div class="tag tag-checkpoint">CHECKPOINT</div>
+        <h1>체크포인트 — Phase 3</h1>
+        <p class="page-desc">매번 새로운 문제. 답은 항상 정수. 동차 좌표, MVP, 투영, 법선.</p>
+      </div>
+      <div class="score-banner" id="scoreBanner"></div>
+      <div class="btn-row">
+        <button class="btn-primary" onclick="grade()">채점하기</button>
+        <button class="btn-secondary" onclick="generateAll()">새 문제</button>
+      </div>
+      <div id="problems"></div>
+      <div class="btn-row">
+        <button class="btn-primary" onclick="grade()">채점하기</button>
+        <button class="btn-secondary" onclick="generateAll()">새 문제</button>
+      </div>
+    </div>
+    <div class="page-nav" id="page-nav"></div>
+    <script>
+    var PAGE_ID = "p3_06";
+    var ON_THIS_PAGE = [];
+    </script>
+    <script src="nav.js"></script>
+  </main>
+
+  <script src="canvas-lib.js"></script>
+  <script>
+// ============================================================
+//  유틸
+// ============================================================
+function randInt(lo,hi){return Math.floor(Math.random()*(hi-lo+1))+lo;}
+function randVec(lo,hi){var v;do{v={x:randInt(lo,hi),y:randInt(lo,hi)};}while(v.x===0&&v.y===0);return v;}
+function fv(v){return '('+v.x+', '+v.y+')';}
+function fmt(n,d){return n.toFixed(d===undefined?2:d);}
+
+// 2D affine helpers
+function affApply(m,v){return{x:m[0]*v.x+m[1]*v.y+m[2], y:m[3]*v.x+m[4]*v.y+m[5]};}
+var RAD=Math.PI/180;
+function matR(d){var r=d*RAD,c=Math.cos(r),s=Math.sin(r);return[c,-s,0,s,c,0];}
+function matS(a,b){return[a,0,0,0,b,0];}
+function matT(a,b){return[1,0,a,0,1,b];}
+function mulA(A,B){return[A[0]*B[0]+A[1]*B[3],A[0]*B[1]+A[1]*B[4],A[0]*B[2]+A[1]*B[5]+A[2],A[3]*B[0]+A[4]*B[3],A[3]*B[1]+A[4]*B[4],A[3]*B[2]+A[4]*B[5]+A[5]];}
+function srt(sx,sy,r,tx,ty){return mulA(matT(tx,ty),mulA(matR(r),matS(sx,sy)));}
+
+var generators=[];
+var problems=[];
+
+// ── 1. 아핀 변환 적용 (3×3 동차, 2D) ──
+generators.push(function(){
+    var angles=[0,90,180,270];
+    var ang=angles[randInt(0,3)];
+    var tx=randInt(-3,3), ty=randInt(-3,3);
+    var pt=randVec(-3,3);
+    var m=mulA(matT(tx,ty),matR(ang));
+    var r=affApply(m,pt);
+    return {
+        num:1, title:'아핀 변환 적용 (동차 3×3)',
+        body:'R('+ang+'°) 후 T('+tx+', '+ty+') 적용. 점 <span class="va">'+fv(pt)+'</span> → ?',
+        fields:[{label:'x =',answer:Math.round(r.x),epsilon:0},{label:'y =',answer:Math.round(r.y),epsilon:0}],
+        draw:function(cid){
+            var c=createCanvas(cid,{width:280,height:280,unit:28});
+            c.clear();c.drawGrid();
+            c.drawDashed({x:0,y:0},pt,c.colors.vecA,1.5,[4,3]);
+            c.drawPoint(r,c.colors.vecC,"결과");
+            c.drawDashed(pt,r,'rgba(131,193,103,0.3)',1,[3,3]);
+            c.ctx.fillStyle='#fff';c.ctx.font='bold 11px "Noto Sans KR",sans-serif';
+            c.ctx.textAlign='center';c.ctx.textBaseline='top';
+            c.ctx.fillText(fv(pt)+'→R('+ang+'°)→T('+tx+','+ty+')→'+fv({x:Math.round(r.x),y:Math.round(r.y)}),140,258);
+        },
+        explain:'R('+ang+'°)·'+fv(pt)+' 후 T('+tx+','+ty+') = <span class="val">'+fv({x:Math.round(r.x),y:Math.round(r.y)})+'</span>'
+    };
+});
+
+// ── 2. SRT 순서 (점 변환) ──
+generators.push(function(){
+    var angles=[0,90,180,270];
+    var ang=angles[randInt(0,3)];
+    var s=randInt(1,3), tx=randInt(-3,3), ty=randInt(-3,3);
+    var pt={x:1,y:0};
+    var m=srt(s,s,ang,tx,ty); // 균등 스케일로 정수 보장
+    var r=affApply(m,pt);
+    return {
+        num:2, title:'SRT 순서 (Model 변환)',
+        body:'S=('+s+','+s+'), R='+ang+'°, T=('+tx+','+ty+'). 점 (1,0) → ?',
+        fields:[{label:'x =',answer:Math.round(r.x),epsilon:0},{label:'y =',answer:Math.round(r.y),epsilon:0}],
+        draw:function(cid){
+            var c=createCanvas(cid,{width:280,height:280,unit:28});
+            c.clear();c.drawGrid();
+            c.drawPoint({x:1,y:0},'rgba(232,200,64,0.4)','(1,0)');
+            c.drawPoint(r,c.colors.vecC,'결과');
+            c.ctx.fillStyle='#fff';c.ctx.font='bold 11px "Noto Sans KR",sans-serif';
+            c.ctx.textAlign='center';c.ctx.textBaseline='top';
+            c.ctx.fillText('S('+s+')→R('+ang+'°)→T('+tx+','+ty+')='+fv({x:Math.round(r.x),y:Math.round(r.y)}),140,258);
+        },
+        explain:'S 먼저: ('+s+',0). R: '+ang+'° 회전. T: +('+tx+','+ty+'). 결과 = <span class="val">'+fv({x:Math.round(r.x),y:Math.round(r.y)})+'</span>'
+    };
+});
+
+// ── 3. View 변환 (단순 이동) ──
+generators.push(function(){
+    var eyeX=randInt(1,5), eyeY=randInt(-3,3);
+    var px=randInt(-4,4), py=randInt(-4,4);
+    var rx=px-eyeX, ry=py-eyeY;
+    return {
+        num:3, title:'View 변환 (카메라 이동)',
+        body:'카메라 eye = ('+eyeX+', '+eyeY+'), 축 정렬(회전 없음). 월드 점 P = ('+px+', '+py+')의 카메라 좌표 x는?',
+        fields:[{label:'x =',answer:rx,epsilon:0}],
+        draw:function(cid){
+            var c=createCanvas(cid,{width:280,height:280,unit:28});
+            c.clear();c.drawGrid();
+            c.drawPoint({x:eyeX,y:eyeY},c.colors.vecB,'eye');
+            c.drawPoint({x:px,y:py},c.colors.vecA,'P');
+            c.drawDashed({x:eyeX,y:eyeY},{x:px,y:py},'rgba(88,196,221,0.3)',1,[4,3]);
+            c.ctx.fillStyle='#fff';c.ctx.font='bold 11px "Noto Sans KR",sans-serif';
+            c.ctx.textAlign='center';c.ctx.textBaseline='top';
+            c.ctx.fillText('View: P-eye = ('+rx+', '+ry+')',140,258);
+        },
+        explain:'축 정렬 카메라의 View = 단순 이동 T(-eye). P - eye = ('+px+'-'+eyeX+', '+py+'-'+eyeY+') = <span class="val">('+rx+', '+ry+')</span>. x = <span class="val">'+rx+'</span>'
+    };
+});
+
+// ── 4. Perspective divide ──
+generators.push(function(){
+    var w=randInt(2,5);
+    var realX=randInt(-4,4);
+    var X=realX*w;
+    var Y=randInt(-3,3)*w;
+    var Z=randInt(1,4)*w;
+    return {
+        num:4, title:'Perspective Divide (÷ w)',
+        body:'동차 좌표 ('+X+', '+Y+', '+Z+', '+w+'). w로 나눈 후 x 좌표는?',
+        fields:[{label:'x =',answer:realX,epsilon:0}],
+        draw:function(cid){
+            var c=createCanvas(cid,{width:280,height:280,unit:28});
+            c.clear();c.drawGrid();
+            c.drawPoint({x:realX,y:Y/w},c.colors.vecC,'결과');
+            c.ctx.fillStyle='#fff';c.ctx.font='bold 12px "Noto Sans KR",sans-serif';
+            c.ctx.textAlign='center';c.ctx.textBaseline='top';
+            c.ctx.fillText('('+X+','+Y+','+Z+','+w+') ÷'+w+' → x='+realX,140,258);
+        },
+        explain:'(X,Y,Z,W) = ('+X+','+Y+','+Z+','+w+'). ÷ w: x = '+X+'/'+w+' = <span class="val">'+realX+'</span>'
+    };
+});
+
+// ── 5. 법선 변환 ──
+generators.push(function(){
+    var sxChoices=[2,3,4];
+    var sx=sxChoices[randInt(0,2)];
+    var sy=1;
+    // 법선 n = (a, b), a를 sx의 배수로 → 답이 정수
+    var a=sx*randInt(-2,2); while(a===0) a=sx*randInt(-2,2);
+    var b=randInt(-3,3);
+    var ans=a/sx; // (M⁻¹)ᵀ n의 x 성분 = nx/sx
+    return {
+        num:5, title:'법선 변환 (M⁻¹)ᵀ',
+        body:'스케일 S = diag('+sx+', '+sy+'). 법선 n = ('+a+', '+b+'). $(S^{-1})^T \\vec{n}$의 x 성분은?',
+        fields:[{label:'x =',answer:ans,epsilon:0}],
+        draw:function(cid){
+            var c=createCanvas(cid,{width:280,height:280,unit:28});
+            c.clear();c.drawGrid();
+            // 타원
+            c.ctx.strokeStyle='rgba(171,107,219,0.3)';c.ctx.lineWidth=1.5;
+            c.ctx.beginPath();
+            for(var i=0;i<=64;i++){var t=i*Math.PI*2/64;var p=c.toS({x:Math.cos(t)*sx,y:Math.sin(t)*sy});if(i===0)c.ctx.moveTo(p.x,p.y);else c.ctx.lineTo(p.x,p.y);}
+            c.ctx.closePath();c.ctx.stroke();
+            // 잘못된 법선 vs 올바른 법선
+            var wrongN={x:sx*a,y:sy*b},correctN={x:a/sx,y:b/sy};
+            var wm=Math.sqrt(wrongN.x*wrongN.x+wrongN.y*wrongN.y);
+            var cm=Math.sqrt(correctN.x*correctN.x+correctN.y*correctN.y);
+            if(wm>0.01){wrongN.x/=wm;wrongN.y/=wm;}
+            if(cm>0.01){correctN.x/=cm;correctN.y/=cm;}
+            c.drawVector(vscale(wrongN,2),c.colors.proj,'Mn');
+            c.drawVector(vscale(correctN,2),c.colors.vecC,'(M⁻¹)ᵀn');
+            c.ctx.fillStyle='#fff';c.ctx.font='bold 11px "Noto Sans KR",sans-serif';
+            c.ctx.textAlign='center';c.ctx.textBaseline='top';
+            c.ctx.fillText('(S⁻¹)ᵀn: x='+a+'/'+sx+'='+ans,140,258);
+        },
+        explain:'$S^{-1} = \\text{diag}(1/'+sx+', 1/'+sy+')$. $(S^{-1})^T = S^{-1}$ (대각이므로). x 성분 = '+a+'/'+sx+' = <span class="val">'+ans+'</span>'
+    };
+});
+
+// ── 6. 4×4 행렬 읽기 ──
+generators.push(function(){
+    var tx=randInt(-5,5), ty=randInt(-5,5), tz=randInt(-5,5);
+    var sx=randInt(1,3), sy=randInt(1,3), sz=randInt(1,3);
+    // 질문 유형 랜덤: 이동 벡터의 x vs det(3×3)
+    var askTranslation=Math.random()<0.5;
+    var ans, qText, exText;
+    if(askTranslation){
+        ans=tx;
+        qText='아래 4×4 행렬의 <strong>이동 벡터 x 성분</strong>은?<br>'+
+            '<span class="mat-inline">'+sx+' 0 0 '+tx+'<br>0 '+sy+' 0 '+ty+'<br>0 0 '+sz+' '+tz+'<br>0 0 0 1</span>';
+        exText='4열이 이동 벡터. x = <span class="val">'+tx+'</span>';
+    } else {
+        ans=sx*sy*sz;
+        qText='아래 4×4 행렬의 <strong>왼쪽 위 3×3의 det</strong>는?<br>'+
+            '<span class="mat-inline">'+sx+' 0 0 '+tx+'<br>0 '+sy+' 0 '+ty+'<br>0 0 '+sz+' '+tz+'<br>0 0 0 1</span>';
+        exText='대각 행렬의 det = '+sx+'×'+sy+'×'+sz+' = <span class="val">'+ans+'</span>';
+    }
+    return {
+        num:6, title:'4×4 행렬 읽기',
+        body:qText,
+        fields:[{label:'답 =',answer:ans,epsilon:0}],
+        draw:function(cid){
+            var c=createCanvas(cid,{width:280,height:280,unit:28});
+            c.clear();c.drawGrid();
+            c.ctx.fillStyle=c.colors.accent;c.ctx.font='bold 14px var(--font-code)';
+            c.ctx.textAlign='center';c.ctx.textBaseline='middle';
+            c.ctx.fillText('['+sx+' 0 0 '+tx+']',140,80);
+            c.ctx.fillText('[0 '+sy+' 0 '+ty+']',140,110);
+            c.ctx.fillText('[0 0 '+sz+' '+tz+']',140,140);
+            c.ctx.fillText('[0 0 0 1]',140,170);
+            // 강조
+            if(askTranslation){
+                c.ctx.fillStyle='rgba(131,193,103,0.15)';
+                c.ctx.fillRect(195,68,40,115);
+                c.ctx.fillStyle=c.colors.vecC;c.ctx.font='bold 12px "Noto Sans KR",sans-serif';
+                c.ctx.textBaseline='top';c.ctx.fillText('← 이동 벡터 (4열)',220,190);
+            } else {
+                c.ctx.fillStyle='rgba(232,200,64,0.1)';
+                c.ctx.fillRect(65,68,130,115);
+                c.ctx.fillStyle=c.colors.vecA;c.ctx.font='bold 12px "Noto Sans KR",sans-serif';
+                c.ctx.textBaseline='top';c.ctx.fillText('← 3×3 선형 블록',140,190);
+            }
+            c.ctx.fillStyle='#fff';c.ctx.font='bold 12px "Noto Sans KR",sans-serif';
+            c.ctx.textAlign='center';c.ctx.textBaseline='top';
+            c.ctx.fillText('답 = '+ans,140,258);
+        },
+        explain:exText
+    };
+});
+
+// ============================================================
+//  렌더링 + 채점 (p2_06과 동일 패턴)
+// ============================================================
+function renderProblems(){
+    var container=document.getElementById('problems');
+    container.innerHTML='';
+    var banner=document.getElementById('scoreBanner');
+    banner.style.display='none';banner.className='score-banner';
+    problems.forEach(function(p,i){
+        var fhtml='';
+        for(var j=0;j<p.fields.length;j++){
+            fhtml+='<label for="ans-'+i+'-'+j+'">'+p.fields[j].label+'</label>'+
+                '<input type="text" class="answer-input" id="ans-'+i+'-'+j+'" autocomplete="off" inputmode="decimal">';
+        }
+        fhtml+='<span class="result-icon" id="icon-'+i+'"></span>';
+        var card=document.createElement('div');
+        card.className='problem-card';card.id='card-'+i;
+        card.innerHTML=
+            '<div class="problem-num">Q'+p.num+'</div>'+
+            '<div class="problem-title">'+p.title+'</div>'+
+            '<div class="problem-body">'+p.body+'</div>'+
+            '<div class="answer-row">'+fhtml+'</div>'+
+            '<div class="feedback" id="fb-'+i+'"><div id="fb-content-'+i+'"></div></div>';
+        container.appendChild(card);
+    });
+    if(window.MathJax&&MathJax.typesetPromise) MathJax.typesetPromise([container]);
+}
+
+function generateAll(){
+    problems=generators.map(function(g){return g();});
+    renderProblems();
+    var first=document.getElementById('ans-0-0');
+    if(first)first.focus();
+}
+
+function grade(){
+    var correct=0;
+    problems.forEach(function(p,i){
+        var card=document.getElementById('card-'+i);
+        var icon=document.getElementById('icon-'+i);
+        var fb=document.getElementById('fb-'+i);
+        var fbc=document.getElementById('fb-content-'+i);
+        var allOk=true;var userVals=[];
+        for(var j=0;j<p.fields.length;j++){
+            var inp=document.getElementById('ans-'+i+'-'+j);
+            var val=parseFloat(inp.value);
+            userVals.push(val);
+            inp.classList.remove('correct-input','wrong-input');
+            if(isNaN(val)||Math.abs(val-p.fields[j].answer)>(p.fields[j].epsilon||0)){
+                allOk=false;inp.classList.add('wrong-input');
+            } else {inp.classList.add('correct-input');}
+        }
+        card.classList.remove('correct','wrong');
+        card.classList.add(allOk?'correct':'wrong');
+        icon.className='result-icon show';
+        icon.textContent=allOk?'\u2705':'\u274C';
+        fbc.innerHTML='';
+        var ansStr=p.fields.map(function(f){return f.answer;}).join(', ');
+        var userStr=userVals.map(function(v){return isNaN(v)?'?':v;}).join(', ');
+        if(allOk){
+            correct++;
+            fb.className='feedback show';
+            fbc.innerHTML='<div class="feedback-correct">정답!</div>'+
+                '<canvas id="cvsFb-'+i+'" width="280" height="280" style="border-radius:10px;"></canvas>'+
+                '<div class="explain-text">'+p.explain+'</div>';
+        } else {
+            fb.className='feedback show';
+            fbc.innerHTML='<div class="feedback-wrong">오답 (입력: '+userStr+', 정답: '+ansStr+')</div>'+
+                '<canvas id="cvsFb-'+i+'" width="280" height="280" style="border-radius:10px;"></canvas>'+
+                '<div class="explain-text">'+p.explain+'</div>';
+        }
+        requestAnimationFrame(function(){
+            if(p.draw)p.draw('cvsFb-'+i);
+            if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([fbc]);
+        });
+    });
+    var banner=document.getElementById('scoreBanner');
+    banner.style.display='block';
+    var total=problems.length;
+    banner.textContent=correct+' / '+total+' 점';
+    banner.className='score-banner';
+    if(correct===total){banner.classList.add('perfect');banner.textContent+=' — 만점!';}
+    else if(correct>=total/2){banner.classList.add('good');banner.textContent+=' — 좀 더!';}
+    else{banner.classList.add('bad');banner.textContent+=' — 오답노트를 꼼꼼히!';}
+    for(var i=0;i<problems.length;i++){
+        var c=document.getElementById('card-'+i);
+        if(c.classList.contains('wrong')){c.scrollIntoView({behavior:'smooth',block:'center'});break;}
+    }
+}
+
+document.addEventListener('keydown',function(e){
+    if(e.key==='Enter'){
+        var a=document.activeElement;
+        if(a&&a.classList.contains('answer-input')){
+            var inputs=document.querySelectorAll('.answer-input');
+            for(var k=0;k<inputs.length;k++){
+                if(inputs[k]===a){if(k<inputs.length-1)inputs[k+1].focus();else grade();break;}
+            }
+        }
+    }
+});
+
+generateAll();
+  </script>
+</body>
+</html>

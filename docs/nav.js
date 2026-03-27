@@ -2,7 +2,7 @@
 // 페이지 추가 시 pages 배열에 항목 추가만 하면 됨. 기존 HTML 수정 불필요.
 
 var NAV_DATA = {
-  xp: { level: 3, percent: 30 },
+  xp: { level: 4, percent: 50 },
 
   // flat 배열 = 페이지 순서. pages[i-1]=prev, pages[i+1]=next (선형, 순환 아님)
   pages: [
@@ -117,6 +117,62 @@ var NAV_DATA = {
       title: "\uCCB4\uD06C\uD3EC\uC778\uD2B8",
       badge: "checkpoint",
       group: "Phase 2 \u2014 \uD589\uB82C = \uBCC0\uD658",
+      subLabel: "\u2705 \uCCB4\uD06C\uD3EC\uC778\uD2B8",
+    },
+
+    // ── Phase 3 ──
+    {
+      id: "p3_01",
+      file: "p3_01_\uC544\uD540\uBCC0\uD658\uACFC_4x4\uD589\uB82C.html",
+      title: "\uC544\uD540 \uBCC0\uD658 & 4\u00D74",
+      badge: "lesson",
+      group: "Phase 3 \u2014 \uB3D9\uCC28\uC88C\uD45C\xB7\uD30C\uC774\uD504\uB77C\uC778",
+      card: {
+        num: "03",
+        cardTitle: "\uB3D9\uCC28 \uC88C\uD45C\uC640 \uADF8\uB798\uD53D\uC2A4 \uD30C\uC774\uD504\uB77C\uC778",
+        desc: "\uC774\uB3D9\uC744 \uD589\uB82C\uB85C, 4\u00D74 \uC544\uD540 \uBCC0\uD658, MVP \uCCB4\uC778, \uC6D0\uADFC \uD22C\uC601, \uBC95\uC120 \uBCC0\uD658.",
+        tags: ["\uC544\uD540\uBCC0\uD658", "MVP", "\uC6D0\uADFC\uD22C\uC601", "\uBC95\uC120\uBCC0\uD658"],
+      },
+      subLabel: "\uD83D\uDCD0 \uC544\uD540 \uBCC0\uD658 & 4\u00D74",
+    },
+    {
+      id: "p3_02",
+      file: "p3_02_Model\uBCC0\uD658.html",
+      title: "Model \uBCC0\uD658",
+      badge: "lesson",
+      group: "Phase 3 \u2014 \uB3D9\uCC28\uC88C\uD45C\xB7\uD30C\uC774\uD504\uB77C\uC778",
+      subLabel: "\uD83D\uDCD0 Model \uBCC0\uD658",
+    },
+    {
+      id: "p3_03",
+      file: "p3_03_View\uBCC0\uD658\uACFC_LookAt.html",
+      title: "View \uBCC0\uD658 & LookAt",
+      badge: "lesson",
+      group: "Phase 3 \u2014 \uB3D9\uCC28\uC88C\uD45C\xB7\uD30C\uC774\uD504\uB77C\uC778",
+      subLabel: "\uD83D\uDCD0 View \uBCC0\uD658 & LookAt",
+    },
+    {
+      id: "p3_04",
+      file: "p3_04_\uC6D0\uADFC\uD22C\uC601.html",
+      title: "\uC6D0\uADFC \uD22C\uC601",
+      badge: "lesson",
+      group: "Phase 3 \u2014 \uB3D9\uCC28\uC88C\uD45C\xB7\uD30C\uC774\uD504\uB77C\uC778",
+      subLabel: "\uD83D\uDCD0 \uC6D0\uADFC \uD22C\uC601",
+    },
+    {
+      id: "p3_05",
+      file: "p3_05_\uBC95\uC120\uBCA1\uD130\uC758_\uBCC0\uD658.html",
+      title: "\uBC95\uC120 \uBCA1\uD130 \uBCC0\uD658",
+      badge: "lesson",
+      group: "Phase 3 \u2014 \uB3D9\uCC28\uC88C\uD45C\xB7\uD30C\uC774\uD504\uB77C\uC778",
+      subLabel: "\uD83D\uDCD0 \uBC95\uC120 \uBCA1\uD130 \uBCC0\uD658",
+    },
+    {
+      id: "p3_06",
+      file: "p3_06_\uCCB4\uD06C\uD3EC\uC778\uD2B8.html",
+      title: "\uCCB4\uD06C\uD3EC\uC778\uD2B8",
+      badge: "checkpoint",
+      group: "Phase 3 \u2014 \uB3D9\uCC28\uC88C\uD45C\xB7\uD30C\uC774\uD504\uB77C\uC778",
       subLabel: "\u2705 \uCCB4\uD06C\uD3EC\uC778\uD2B8",
     },
   ],

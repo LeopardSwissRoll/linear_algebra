@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 3 — Model 변환 | MyAcademy</title>
+    <link rel="stylesheet" href="style.css">
+    <script>
+    MathJax = { tex: { inlineMath: [['$','$']], displayMath: [['$$','$$']] }, svg: { fontCache: 'global' } };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+    <style>
+        .t-slider-row { display:flex; align-items:center; gap:0.8rem; margin-top:0.4rem; font-size:0.88rem; }
+        .t-slider-row input[type="range"] { flex:1; max-width:220px; accent-color:var(--accent); }
+        .t-slider-row .t-val { font-family:var(--font-code); font-weight:700; color:var(--accent); min-width:3rem; }
+        .slider-label { min-width:2rem; font-weight:600; font-size:0.82rem; }
+        .obj-selector { display:flex; gap:0.4rem; flex-wrap:wrap; margin-bottom:0.5rem; }
+        .obj-btn { padding:0.3rem 0.8rem; font-size:0.82rem; border-radius:6px; cursor:pointer; font-family:inherit; font-weight:600; border:2px solid transparent; background:var(--bg-surface); color:var(--text-primary); transition:all 0.2s; }
+        .obj-btn.sel-a { border-color:var(--vec-a); background:rgba(232,200,64,0.1); }
+        .obj-btn.sel-b { border-color:var(--vec-b); background:rgba(88,196,221,0.1); }
+        .obj-btn.sel-c { border-color:var(--vec-c); background:rgba(131,193,103,0.1); }
+        .arm-joint { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:0.3rem; vertical-align:middle; }
+    </style>
+</head>
+<body>
+  <header class="header">
+    <button class="hamburger" id="hamburger" aria-label="메뉴"><span></span><span></span><span></span></button>
+    <div class="header-logo">MyAcademy<span class="subtitle">선형대수 × 그래픽스 × AI</span></div>
+    <button class="theme-toggle" id="themeToggle" aria-label="테마 전환"><span class="theme-toggle-icon"></span></button>
+  </header>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <nav class="sidebar" id="sidebar"></nav>
+
+  <main class="main-content">
+    <div class="content">
+      <div class="page-title">
+        <div class="tag tag-lesson">PHASE 3</div>
+        <h1>Model 변환 (로컬 → 월드)</h1>
+        <p class="page-desc">오브젝트를 세계에 배치하기. SRT 순서와 계층 구조.</p>
+      </div>
+
+      <!-- ══════════ 1. 공간 ══════════ -->
+      <section>
+        <h2 id="spaces">공간(Space)이란?</h2>
+        <div class="info-cards">
+          <div class="info-card">
+            <h4>로컬 공간 (Local)</h4>
+            <p>오브젝트가 원점에 놓인 상태. 모델러가 만든 그대로.</p>
+          </div>
+          <div class="info-card">
+            <h4>월드 공간 (World)</h4>
+            <p>게임 세계의 절대 좌표계. 모든 오브젝트가 공유하는 기준.</p>
+          </div>
+        </div>
+        <div class="formula-box">
+          $$\vec{v}_{world} = M_{model} \cdot \vec{v}_{local} \qquad M_{model} = T \cdot R \cdot S$$
+        </div>
+      </section>
+
+      <!-- ══════════ 2. 미니 씬 ══════════ -->
+      <section>
+        <h2 id="scene">여러 오브젝트 배치 — 2D 미니 씬</h2>
+        <p>오브젝트를 클릭해서 선택하고, SRT 슬라이더로 배치해봐. 각 오브젝트는 자신만의 Model 행렬을 가진다.</p>
+
+        <div class="interactive-section" style="flex-direction:column;align-items:center;">
+          <div class="canvas-wrap">
+            <canvas id="cvsScene" width="600" height="600"></canvas>
+            <div class="obj-selector">
+              <button class="obj-btn sel-a" id="selA">▲ 삼각형 A</button>
+              <button class="obj-btn" id="selB">■ 사각형 B</button>
+              <button class="obj-btn" id="selC">◣ L자 C</button>
+              <label style="margin-left:auto;font-size:0.82rem;display:flex;align-items:center;gap:0.3rem;cursor:pointer;">
+                <input type="checkbox" id="showLocal"> 로컬 축 보기
+              </label>
+            </div>
+            <div id="sceneSliders">
+              <div class="t-slider-row"><span class="slider-label">S<sub>x</sub></span><input type="range" id="scSx" min="0.3" max="3" step="0.1" value="1"><span class="t-val" id="scSxV">1.00</span></div>
+              <div class="t-slider-row"><span class="slider-label">S<sub>y</sub></span><input type="range" id="scSy" min="0.3" max="3" step="0.1" value="1"><span class="t-val" id="scSyV">1.00</span></div>
+              <div class="t-slider-row"><span class="slider-label">R</span><input type="range" id="scR" min="-180" max="180" step="1" value="0"><span class="t-val" id="scRV">0°</span></div>
+              <div class="t-slider-row"><span class="slider-label">T<sub>x</sub></span><input type="range" id="scTx" min="-5" max="5" step="0.1" value="2"><span class="t-val" id="scTxV">2.0</span></div>
+              <div class="t-slider-row"><span class="slider-label">T<sub>y</sub></span><input type="range" id="scTy" min="-5" max="5" step="0.1" value="3"><span class="t-val" id="scTyV">3.0</span></div>
+            </div>
+          </div>
+          <div class="math-panel" style="width:100%;max-width:600px;min-width:unset;">
+            <h3>선택된 오브젝트의 Model 행렬</h3>
+            <div class="calc-group">
+              <div class="label">M = T · R · S</div>
+              <div class="calc-row" id="scMat" style="line-height:1.6;"></div>
+            </div>
+            <div class="calc-group">
+              <div class="label">월드 위치 (4열)</div>
+              <div class="calc-row" id="scPos"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ 3. 계층 구조 ══════════ -->
+      <section>
+        <h2 id="hierarchy">계층 구조 — 2D 로봇팔</h2>
+        <div class="formula-box">
+          $$M_{arm\_world} = M_{body} \cdot M_{arm\_local}$$
+          <p class="note">부모가 움직이면 자식도 같이 움직인다. 게임 캐릭터의 관절 시스템의 본질.</p>
+        </div>
+
+        <div class="interactive-section" style="flex-direction:column;align-items:center;">
+          <div class="canvas-wrap">
+            <canvas id="cvsArm" width="600" height="600"></canvas>
+            <div class="t-slider-row">
+              <span class="slider-label" style="min-width:3rem;"><span class="arm-joint" style="background:var(--vec-a);"></span>어깨</span>
+              <input type="range" id="armShoulder" min="-180" max="180" step="1" value="30">
+              <span class="t-val" id="armShV">30°</span>
+            </div>
+            <div class="t-slider-row">
+              <span class="slider-label" style="min-width:3rem;"><span class="arm-joint" style="background:var(--vec-b);"></span>팔꿈치</span>
+              <input type="range" id="armElbow" min="-180" max="180" step="1" value="45">
+              <span class="t-val" id="armElV">45°</span>
+            </div>
+          </div>
+          <div class="math-panel" style="width:100%;max-width:600px;min-width:unset;">
+            <h3>관절 행렬</h3>
+            <div class="calc-group">
+              <div class="label">윗팔 (어깨): M<sub>upper</sub></div>
+              <div class="calc-row" id="armUpper"></div>
+            </div>
+            <div class="calc-group">
+              <div class="label">아래팔 (로컬): M<sub>lower_local</sub></div>
+              <div class="calc-row" id="armLowerLocal"></div>
+            </div>
+            <div class="calc-group" style="padding-top:0.8rem;border-top:1px solid var(--border);">
+              <div class="label">아래팔 (월드): M<sub>upper</sub> · M<sub>lower</sub></div>
+              <div class="calc-row" id="armLowerWorld"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout">
+          <div class="callout-title">부모의 변환이 자식에게 전파된다</div>
+          <p style="margin-bottom:0;">어깨를 돌리면 팔꿈치도 같이 움직인다 — $M_{body}$가 바뀌니까. 팔꿈치를 돌리면 아래팔만 움직인다 — $M_{arm\_local}$만 바뀌니까. 이게 스켈레탈 애니메이션의 기본.</p>
+        </div>
+      </section>
+
+      <div class="callout">
+        <div class="callout-title">비균등 스케일과 법선 — 주의!</div>
+        <p style="margin-bottom:0;">미니 씬에서 $S_x \neq S_y$로 놓아봐. 오브젝트 형태가 찌그러진다. 이때 <strong>법선 벡터를 같은 Model 행렬로 변환하면 표면에 수직이 아니게 된다</strong> — 조명이 깨지는 원인. 해결법은 $(M^{-1})^T$ (역전치). 상세는 p3_05에서.</p>
+      </div>
+
+      <!-- ══════════ 4. 직접 해보기 ══════════ -->
+      <section class="exercises">
+        <h2 id="exercises">직접 해보기</h2>
+        <ol>
+          <li><strong>SRT 조합:</strong> 삼각형 A의 스케일을 (2, 0.5), 회전 60°, 이동 (4, 1)로 설정. 결과 확인.</li>
+          <li><strong>다중 오브젝트:</strong> 세 오브젝트를 각각 다른 위치/각도로 배치. 각 Model 행렬이 다른 걸 확인.</li>
+          <li><strong>계층 관찰:</strong> 어깨만 돌려봐. 아래팔도 같이 움직이는 이유는?</li>
+          <li><strong>로컬 축:</strong> "로컬 축 보기"를 켜고 회전해봐. 로컬 축이 오브젝트와 함께 돌아가는 걸 확인.</li>
+          <li><strong>행렬의 4열:</strong> Model 행렬의 마지막 열(이동 부분)이 오브젝트의 월드 위치와 같은 이유는?</li>
+        </ol>
+      </section>
+    </div>
+
+    <div class="page-nav" id="page-nav"></div>
+
+    <script>
+    var PAGE_ID = "p3_02";
+    var ON_THIS_PAGE = [
+      { id: "spaces", label: "공간이란" },
+      { id: "scene", label: "미니 씬" },
+      { id: "hierarchy", label: "계층 구조" },
+      { id: "exercises", label: "직접 해보기" }
+    ];
+    </script>
+    <script src="nav.js"></script>
+  </main>
+
+  <script src="canvas-lib.js"></script>
+  <script>
+// ============================================================
+//  공통
+// ============================================================
+var DEG=180/Math.PI, RAD=Math.PI/180;
+function fmt(n,d){return n.toFixed(d===undefined?2:d);}
+function affine(m,v){return{x:m[0]*v.x+m[1]*v.y+m[2], y:m[3]*v.x+m[4]*v.y+m[5]};}
+function mulAff(A,B){
+    return[A[0]*B[0]+A[1]*B[3],A[0]*B[1]+A[1]*B[4],A[0]*B[2]+A[1]*B[5]+A[2],
+           A[3]*B[0]+A[4]*B[3],A[3]*B[1]+A[4]*B[4],A[3]*B[2]+A[4]*B[5]+A[5]];
+}
+function matS(a,b){return[a,0,0,0,b,0];}
+function matR(deg){var r=deg*RAD,co=Math.cos(r),si=Math.sin(r);return[co,-si,0,si,co,0];}
+function matT(a,b){return[1,0,a,0,1,b];}
+function srt(sx,sy,r,tx,ty){return mulAff(matT(tx,ty),mulAff(matR(r),matS(sx,sy)));}
+function fmtAff(m){return'['+fmt(m[0],2)+' '+fmt(m[1],2)+' '+fmt(m[2],2)+']<br>['+fmt(m[3],2)+' '+fmt(m[4],2)+' '+fmt(m[5],2)+']<br>[0  0  1]';}
+
+// shapes
+var TRI=[{x:0,y:0},{x:1.2,y:0},{x:0.6,y:1}];
+var RECT=[{x:0,y:0},{x:1,y:0},{x:1,y:0.8},{x:0,y:0.8}];
+var LSHP=[{x:0,y:0},{x:1.2,y:0},{x:1.2,y:0.35},{x:0.35,y:0.35},{x:0.35,y:1},{x:0,y:1}];
+
+function drawPoly(c,m,pts,fill,stroke){
+    var ctx=c.ctx;ctx.beginPath();
+    for(var i=0;i<pts.length;i++){var p=c.toS(affine(m,pts[i]));if(i===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);}
+    ctx.closePath();ctx.fillStyle=fill;ctx.fill();ctx.strokeStyle=stroke;ctx.lineWidth=2;ctx.stroke();
+}
+function drawLocalAxes(c,m){
+    var o=affine(m,{x:0,y:0});
+    var ex=affine(m,{x:0.8,y:0}),ey=affine(m,{x:0,y:0.8});
+    c.drawVectorFrom(o,ex,c.colors.vecA,'x');
+    c.drawVectorFrom(o,ey,c.colors.vecB,'y');
+}
+
+// ============================================================
+//  캔버스 1 — 미니 씬
+// ============================================================
+(function(){
+    var c=createCanvas('cvsScene',{width:600,height:600,unit:50});
+    var objs=[
+        {name:'A',pts:TRI,sx:1,sy:1,r:0,tx:2,ty:3,fill:'rgba(232,200,64,0.15)',stroke:'rgba(232,200,64,0.5)',selCls:'sel-a'},
+        {name:'B',pts:RECT,sx:0.5,sy:1.5,r:45,tx:-3,ty:1,fill:'rgba(88,196,221,0.15)',stroke:'rgba(88,196,221,0.5)',selCls:'sel-b'},
+        {name:'C',pts:LSHP,sx:1,sy:1,r:-20,tx:1,ty:-2,fill:'rgba(131,193,103,0.15)',stroke:'rgba(131,193,103,0.5)',selCls:'sel-c'}
+    ];
+    var sel=0, showLocal=false;
+
+    var sliders={
+        sx:document.getElementById('scSx'),sy:document.getElementById('scSy'),
+        r:document.getElementById('scR'),tx:document.getElementById('scTx'),ty:document.getElementById('scTy')
+    };
+    var vals={
+        sx:document.getElementById('scSxV'),sy:document.getElementById('scSyV'),
+        r:document.getElementById('scRV'),tx:document.getElementById('scTxV'),ty:document.getElementById('scTyV')
+    };
+
+    function syncSliders(){
+        var o=objs[sel];
+        sliders.sx.value=o.sx;sliders.sy.value=o.sy;sliders.r.value=o.r;sliders.tx.value=o.tx;sliders.ty.value=o.ty;
+        vals.sx.textContent=fmt(o.sx);vals.sy.textContent=fmt(o.sy);vals.r.textContent=o.r+'°';
+        vals.tx.textContent=fmt(o.tx,1);vals.ty.textContent=fmt(o.ty,1);
+    }
+
+    ['selA','selB','selC'].forEach(function(id,i){
+        document.getElementById(id).addEventListener('click',function(){
+            sel=i;syncSliders();updateBtns();render();
+        });
+    });
+    function updateBtns(){
+        document.getElementById('selA').className='obj-btn'+(sel===0?' sel-a':'');
+        document.getElementById('selB').className='obj-btn'+(sel===1?' sel-b':'');
+        document.getElementById('selC').className='obj-btn'+(sel===2?' sel-c':'');
+    }
+
+    sliders.sx.addEventListener('input',function(e){objs[sel].sx=parseFloat(e.target.value);vals.sx.textContent=fmt(objs[sel].sx);render();});
+    sliders.sy.addEventListener('input',function(e){objs[sel].sy=parseFloat(e.target.value);vals.sy.textContent=fmt(objs[sel].sy);render();});
+    sliders.r.addEventListener('input',function(e){objs[sel].r=parseInt(e.target.value);vals.r.textContent=objs[sel].r+'°';render();});
+    sliders.tx.addEventListener('input',function(e){objs[sel].tx=parseFloat(e.target.value);vals.tx.textContent=fmt(objs[sel].tx,1);render();});
+    sliders.ty.addEventListener('input',function(e){objs[sel].ty=parseFloat(e.target.value);vals.ty.textContent=fmt(objs[sel].ty,1);render();});
+    document.getElementById('showLocal').addEventListener('change',function(){showLocal=this.checked;render();});
+
+    function render(){
+        c.clear();c.drawGrid();
+        for(var i=0;i<objs.length;i++){
+            var o=objs[i];
+            var m=srt(o.sx,o.sy,o.r,o.tx,o.ty);
+            var isSelected=i===sel;
+            var f=isSelected?o.fill.replace('0.15','0.25'):o.fill;
+            var s=isSelected?o.stroke.replace('0.5','0.8'):o.stroke;
+            drawPoly(c,m,o.pts,f,s);
+            // label
+            var center=affine(m,{x:0.4,y:0.3});
+            var cs=c.toS(center);
+            c.ctx.fillStyle=isSelected?'#fff':'rgba(200,200,220,0.5)';
+            c.ctx.font=(isSelected?'bold ':'')+' 13px "Noto Sans KR",sans-serif';
+            c.ctx.textAlign='center';c.ctx.textBaseline='middle';
+            c.ctx.fillText(o.name,cs.x,cs.y);
+            if(isSelected&&showLocal) drawLocalAxes(c,m);
+        }
+        // panel
+        var o=objs[sel];
+        var m=srt(o.sx,o.sy,o.r,o.tx,o.ty);
+        document.getElementById('scMat').innerHTML=fmtAff(m);
+        var pos=affine(m,{x:0,y:0});
+        document.getElementById('scPos').innerHTML='('+fmt(pos.x)+', '+fmt(pos.y)+')';
+    }
+    syncSliders();render();
+})();
+
+// ============================================================
+//  캔버스 2 — 로봇팔 (계층 변환)
+// ============================================================
+(function(){
+    var c=createCanvas('cvsArm',{width:600,height:600,unit:50});
+    var shoulderAng=30, elbowAng=45;
+    var UPPER_LEN=2.5, LOWER_LEN=2;
+
+    var shS=document.getElementById('armShoulder'),elS=document.getElementById('armElbow');
+    var shV=document.getElementById('armShV'),elV=document.getElementById('armElV');
+    shS.addEventListener('input',function(e){shoulderAng=parseInt(e.target.value);shV.textContent=shoulderAng+'°';render();});
+    elS.addEventListener('input',function(e){elbowAng=parseInt(e.target.value);elV.textContent=elbowAng+'°';render();});
+
+    function render(){
+        c.clear();c.drawGrid();
+        var ctx=c.ctx;
+
+        // 어깨: 원점에서 회전
+        var mUpper=matR(shoulderAng);
+        // 팔꿈치: 윗팔 끝에서 추가 회전
+        var mElbowLocal=mulAff(matT(UPPER_LEN,0),matR(elbowAng));
+        var mLowerWorld=mulAff(mUpper,mElbowLocal);
+
+        // 관절 위치
+        var shoulder={x:0,y:0};
+        var elbow=affine(mUpper,{x:UPPER_LEN,y:0});
+        var hand=affine(mLowerWorld,{x:LOWER_LEN,y:0});
+
+        // 윗팔 (두꺼운 선)
+        var ss=c.toS(shoulder),es=c.toS(elbow),hs=c.toS(hand);
+        ctx.strokeStyle=c.colors.vecA;ctx.lineWidth=8;ctx.lineCap='round';
+        ctx.beginPath();ctx.moveTo(ss.x,ss.y);ctx.lineTo(es.x,es.y);ctx.stroke();
+
+        // 아래팔
+        ctx.strokeStyle=c.colors.vecB;ctx.lineWidth=6;
+        ctx.beginPath();ctx.moveTo(es.x,es.y);ctx.lineTo(hs.x,hs.y);ctx.stroke();
+
+        // 관절 원
+        ctx.fillStyle=c.colors.vecA;
+        ctx.beginPath();ctx.arc(ss.x,ss.y,8,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle=c.colors.vecB;
+        ctx.beginPath();ctx.arc(es.x,es.y,6,0,Math.PI*2);ctx.fill();
+        // 손 끝
+        ctx.fillStyle=c.colors.vecC;
+        ctx.beginPath();ctx.arc(hs.x,hs.y,5,0,Math.PI*2);ctx.fill();
+
+        // 각도 호
+        c.drawAngleArc({x:1,y:0},{x:Math.cos(shoulderAng*RAD),y:Math.sin(shoulderAng*RAD)},'θ₁');
+
+        // 레이블
+        ctx.fillStyle='rgba(200,200,220,0.6)';ctx.font='11px "Noto Sans KR",sans-serif';
+        ctx.textAlign='center';ctx.textBaseline='bottom';
+        ctx.fillText('어깨',ss.x,ss.y-14);
+        ctx.fillText('팔꿈치',es.x,es.y-12);
+        ctx.fillText('손',hs.x,hs.y-10);
+
+        // 패널
+        document.getElementById('armUpper').innerHTML=
+            'R('+shoulderAng+'°) — 원점 기준 회전';
+        document.getElementById('armLowerLocal').innerHTML=
+            'T('+UPPER_LEN+',0) · R('+elbowAng+'°) — 윗팔 끝에서 회전';
+        document.getElementById('armLowerWorld').innerHTML=
+            fmtAff(mLowerWorld)+'<br>손 끝: <span class="vc">('+fmt(hand.x)+', '+fmt(hand.y)+')</span>';
+    }
+    render();
+})();
+  </script>
+</body>
+</html>
