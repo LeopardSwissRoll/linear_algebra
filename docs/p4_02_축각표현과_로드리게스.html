@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 4 — 축-각 표현 & 로드리게스 | MyAcademy</title>
+    <link rel="stylesheet" href="style.css">
+    <script>
+    MathJax = { tex: { inlineMath: [['$','$']], displayMath: [['$$','$$']] }, svg: { fontCache: 'global' } };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+    <style>
+        .t-slider-row { display:flex; align-items:center; gap:0.8rem; margin-top:0.4rem; font-size:0.88rem; }
+        .t-slider-row input[type="range"] { flex:1; max-width:240px; accent-color:var(--accent); }
+        .t-slider-row .t-val { font-family:var(--font-code); font-weight:700; color:var(--accent); min-width:3.5rem; }
+        .slider-label { min-width:3.5rem; font-weight:600; font-size:0.82rem; }
+        .pbtn { font-size:0.78rem; padding:0.25rem 0.6rem; background:var(--bg-surface); border:1px solid var(--border); border-radius:4px; cursor:pointer; color:var(--text-primary); font-family:inherit; transition:all 0.2s; }
+        .pbtn:hover, .pbtn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+        .preset-row { display:flex; gap:0.4rem; flex-wrap:wrap; margin-top:0.5rem; justify-content:center; }
+        .cmp-table { width:100%; border-collapse:collapse; margin:1rem 0; font-size:0.85rem; }
+        .cmp-table th, .cmp-table td { padding:0.45rem 0.5rem; border:1px solid var(--border); text-align:center; }
+        .cmp-table th { background:rgba(171,107,219,0.08); color:var(--accent); font-weight:600; font-size:0.75rem; }
+        .cmp-table td:first-child { text-align:left; font-weight:600; color:var(--text-secondary); font-size:0.82rem; }
+    </style>
+</head>
+<body>
+  <header class="header">
+    <button class="hamburger" id="hamburger" aria-label="메뉴"><span></span><span></span><span></span></button>
+    <div class="header-logo">MyAcademy<span class="subtitle">선형대수 × 그래픽스 × AI</span></div>
+    <button class="theme-toggle" id="themeToggle" aria-label="테마 전환"><span class="theme-toggle-icon"></span></button>
+  </header>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <nav class="sidebar" id="sidebar"></nav>
+
+  <main class="main-content">
+    <div class="content">
+      <div class="page-title">
+        <div class="tag tag-lesson">PHASE 4</div>
+        <h1>축-각 표현 & 로드리게스</h1>
+        <p class="page-desc">임의의 축 + 각도 하나로 3D 회전. 로드리게스 공식으로 직접 회전한다.</p>
+      </div>
+
+      <!-- ══════════ 1. SO(3) ══════════ -->
+      <section>
+        <h2 id="so3">회전의 자유도 — SO(3)</h2>
+        <div class="formula-box">
+          <p style="font-weight:600;color:var(--text-primary);">어떤 3D 회전이든 축 하나 + 각도 하나로 표현 가능 (오일러의 회전 정리)</p>
+          <p class="note">축 방향 2자유도 + 각도 1자유도 = 총 3자유도. SO(3) = 직교행렬 중 $\det=+1$.</p>
+        </div>
+        <table class="cmp-table">
+          <thead><tr><th>표현</th><th>숫자</th><th>자유도</th><th>중복/제약</th></tr></thead>
+          <tbody>
+            <tr><td>오일러 각</td><td>3</td><td>3</td><td>짐벌 락 (특이점)</td></tr>
+            <tr><td>회전 행렬</td><td>9</td><td>3</td><td>$R^TR=I$, $\det R=1$ (6제약)</td></tr>
+            <tr><td>축-각</td><td>4</td><td>3</td><td>축 단위벡터 (1제약)</td></tr>
+            <tr><td>쿼터니언</td><td>4</td><td>3</td><td>노름=1 (1제약)</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ══════════ 2. 축-각 시각화 ══════════ -->
+      <section>
+        <h2 id="axis-angle">축-각 시각화</h2>
+        <p>회전 축 $\hat{n}$과 각도 $\theta$. 축 위의 점은 움직이지 않는다 — 축 = 고유벡터.</p>
+
+        <div class="interactive-section" style="flex-direction:column;align-items:center;">
+          <div class="canvas-wrap">
+            <canvas id="cvsAxisAngle" width="600" height="500"></canvas>
+            <div class="t-slider-row"><span class="slider-label">n<sub>x</sub></span><input type="range" id="snx" min="-100" max="100" step="1" value="0"><span class="t-val" id="snxV">0.00</span></div>
+            <div class="t-slider-row"><span class="slider-label">n<sub>y</sub></span><input type="range" id="sny" min="-100" max="100" step="1" value="100"><span class="t-val" id="snyV">1.00</span></div>
+            <div class="t-slider-row"><span class="slider-label">n<sub>z</sub></span><input type="range" id="snz" min="-100" max="100" step="1" value="0"><span class="t-val" id="snzV">0.00</span></div>
+            <div class="t-slider-row"><span class="slider-label">θ</span><input type="range" id="theta" min="-180" max="180" step="1" value="60"><span class="t-val" id="thetaV">60°</span></div>
+            <div class="preset-row">
+              <button class="pbtn" data-nx="100" data-ny="0" data-nz="0" data-t="90">x축 90°</button>
+              <button class="pbtn active" data-nx="0" data-ny="100" data-nz="0" data-t="60">y축 60°</button>
+              <button class="pbtn" data-nx="0" data-ny="0" data-nz="100" data-t="90">z축 90°</button>
+              <button class="pbtn" data-nx="0" data-ny="100" data-nz="0" data-t="90">y축 90°</button>
+              <button class="pbtn" data-nx="58" data-ny="58" data-nz="58" data-t="120">대각 120°</button>
+            </div>
+          </div>
+          <div class="math-panel" style="width:100%;max-width:600px;min-width:unset;">
+            <h3>축-각</h3>
+            <div class="calc-group">
+              <div class="label">축 $\hat{n}$</div>
+              <div class="calc-row" id="aaAxis"></div>
+            </div>
+            <div class="calc-group">
+              <div class="label">각도 θ</div>
+              <div class="calc-row" id="aaAngle"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ 3. 로드리게스 ══════════ -->
+      <section>
+        <h2 id="rodrigues">로드리게스 회전 공식</h2>
+        <div class="formula-box">
+          $$\vec{v'} = \vec{v}\cos\theta + (\hat{n}\times\vec{v})\sin\theta + \hat{n}(\hat{n}\cdot\vec{v})(1-\cos\theta)$$
+          <p class="note">평행 성분은 불변, 수직 성분만 회전. $\vec{v}_\perp$와 $\hat{n}\times\vec{v}$가 수직면의 직교 기저.</p>
+        </div>
+
+        <div class="interactive-section" style="flex-direction:column;align-items:center;">
+          <div class="canvas-wrap">
+            <canvas id="cvsRodrigues" width="600" height="500"></canvas>
+            <div class="t-slider-row"><span class="slider-label">θ</span><input type="range" id="rodTheta" min="0" max="360" step="1" value="60"><span class="t-val" id="rodThetaV">60°</span></div>
+          </div>
+          <div class="math-panel" style="width:100%;max-width:600px;min-width:unset;">
+            <h3>분해</h3>
+            <div class="calc-group">
+              <div class="label">$\vec{v}_\parallel = \hat{n}(\hat{n}\cdot\vec{v})$ (축 사영, 불변)</div>
+              <div class="calc-row" id="rodPar"></div>
+            </div>
+            <div class="calc-group">
+              <div class="label">$\vec{v}_\perp = \vec{v} - \vec{v}_\parallel$ (수직 성분)</div>
+              <div class="calc-row" id="rodPerp"></div>
+            </div>
+            <div class="calc-group">
+              <div class="label">$\hat{n}\times\vec{v}$ (수직면 직교 벡터)</div>
+              <div class="calc-row" id="rodCross"></div>
+            </div>
+            <div class="calc-group" style="padding-top:0.8rem;border-top:1px solid var(--border);">
+              <div class="label">결과 $\vec{v'}$</div>
+              <div class="calc-row" id="rodResult"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ 4. 한계 ══════════ -->
+      <section>
+        <h2 id="limits">축-각의 한계</h2>
+        <div class="info-cards">
+          <div class="info-card"><h4>합성이 불편</h4><p>두 축-각의 합성 = 직접 공식 없음. 행렬로 변환 → 곱 → 다시 추출.</p></div>
+          <div class="info-card"><h4>보간이 비선형</h4><p>축과 각도를 각각 Lerp하면 결과가 이상해짐.</p></div>
+          <div class="info-card"><h4>θ=0의 특이점</h4><p>회전 없음일 때 축이 정의되지 않음.</p></div>
+        </div>
+        <div class="callout">
+          <div class="callout-title">→ 쿼터니언이 이 모든 걸 해결한다</div>
+          <p style="margin-bottom:0;">합성 = 쿼터니언 곱. 보간 = Slerp. 특이점 없음. 다음 수업에서.</p>
+        </div>
+      </section>
+
+      <!-- ══════════ 5. 직접 해보기 ══════════ -->
+      <section class="exercises">
+        <h2 id="exercises">직접 해보기</h2>
+        <ol>
+          <li><strong>축-각 체감:</strong> "y축 90°" 프리셋을 눌러봐. Yaw 90°와 같은 결과인지.</li>
+          <li><strong>분해 확인:</strong> 로드리게스 캔버스에서 축 방향 벡터를 회전. $\vec{v}_\parallel = \vec{v}$이고 결과 = 원래.</li>
+          <li><strong>90° 회전:</strong> θ=90°에서 $\vec{v}_\perp$가 $\hat{n}\times\vec{v}$ 방향으로 완전히 이동하는 걸 확인.</li>
+          <li><strong>행렬 비교:</strong> x축 90° 축-각의 결과가 $R_x(90°)$ 행렬과 같은지.</li>
+        </ol>
+      </section>
+    </div>
+
+    <div class="page-nav" id="page-nav"></div>
+
+    <script>
+    var PAGE_ID = "p4_02";
+    var ON_THIS_PAGE = [
+      { id: "so3", label: "SO(3)" },
+      { id: "axis-angle", label: "축-각 시각화" },
+      { id: "rodrigues", label: "로드리게스" },
+      { id: "limits", label: "한계" },
+      { id: "exercises", label: "직접 해보기" }
+    ];
+    </script>
+    <script src="nav.js"></script>
+  </main>
+
+  <script src="canvas-lib.js"></script>
+  <script>
+var RAD=Math.PI/180, DEG=180/Math.PI;
+function fmt(n,d){return n.toFixed(d===undefined?2:d);}
+
+// ── 3D 수학 (p4_01과 동일) ──
+function rotX(a){var c=Math.cos(a),s=Math.sin(a);return[[1,0,0],[0,c,-s],[0,s,c]];}
+function rotY(a){var c=Math.cos(a),s=Math.sin(a);return[[c,0,s],[0,1,0],[-s,0,c]];}
+function rotZ(a){var c=Math.cos(a),s=Math.sin(a);return[[c,-s,0],[s,c,0],[0,0,1]];}
+function mulM3(A,B){var R=[[0,0,0],[0,0,0],[0,0,0]];for(var i=0;i<3;i++)for(var j=0;j<3;j++)for(var k=0;k<3;k++)R[i][j]+=A[i][k]*B[k][j];return R;}
+function mulV3(M,v){return[M[0][0]*v[0]+M[0][1]*v[1]+M[0][2]*v[2],M[1][0]*v[0]+M[1][1]*v[1]+M[1][2]*v[2],M[2][0]*v[0]+M[2][1]*v[1]+M[2][2]*v[2]];}
+function proj(p){return{x:(p[0]-p[2])*0.82, y:-p[1]+(p[0]+p[2])*0.38};}
+
+function cross3(a,b){return[a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];}
+function dot3(a,b){return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];}
+function scale3(v,s){return[v[0]*s,v[1]*s,v[2]*s];}
+function add3(a,b){return[a[0]+b[0],a[1]+b[1],a[2]+b[2]];}
+function mag3(v){return Math.sqrt(dot3(v,v));}
+
+function drawAxis3D(c,M,axisIdx,len,color,label){
+    var dir=[0,0,0];dir[axisIdx]=len;
+    var tip=mulV3(M,dir);
+    var o=c.toS(proj([0,0,0])),t=c.toS(proj(tip));
+    c.ctx.save();c.ctx.shadowColor=color;c.ctx.shadowBlur=4;
+    c.ctx.strokeStyle=color;c.ctx.lineWidth=3;c.ctx.lineCap='round';
+    c.ctx.beginPath();c.ctx.moveTo(o.x,o.y);c.ctx.lineTo(t.x,t.y);c.ctx.stroke();
+    c.arrowhead(o.x,o.y,t.x,t.y,color);c.ctx.restore();
+    if(label){c.ctx.fillStyle=color;c.ctx.font='bold italic 14px serif';c.ctx.textAlign='center';c.ctx.textBaseline='middle';
+    var d={x:t.x-o.x,y:t.y-o.y};var dl=Math.sqrt(d.x*d.x+d.y*d.y)||1;c.ctx.fillText(label,t.x+d.x/dl*16,t.y+d.y/dl*16);}
+}
+function drawVec3D(c,from,to,color,label){
+    var o=c.toS(proj(from)),t=c.toS(proj(to));
+    var dl=Math.sqrt((t.x-o.x)**2+(t.y-o.y)**2);if(dl<3)return;
+    c.ctx.save();c.ctx.shadowColor=color;c.ctx.shadowBlur=4;
+    c.ctx.strokeStyle=color;c.ctx.lineWidth=2.5;c.ctx.lineCap='round';
+    c.ctx.beginPath();c.ctx.moveTo(o.x,o.y);c.ctx.lineTo(t.x,t.y);c.ctx.stroke();
+    c.arrowhead(o.x,o.y,t.x,t.y,color);c.ctx.restore();
+    if(label){c.ctx.fillStyle=color;c.ctx.font='bold 12px "Noto Sans KR",sans-serif';c.ctx.textAlign='left';c.ctx.textBaseline='bottom';
+    c.ctx.fillText(label,t.x+6,t.y-4);}
+}
+function drawDash3D(c,from,to,color){
+    var o=c.toS(proj(from)),t=c.toS(proj(to));
+    c.ctx.strokeStyle=color;c.ctx.lineWidth=1.5;c.ctx.setLineDash([5,3]);
+    c.ctx.beginPath();c.ctx.moveTo(o.x,o.y);c.ctx.lineTo(t.x,t.y);c.ctx.stroke();c.ctx.setLineDash([]);
+}
+
+// 축-각 → 회전 행렬 (로드리게스)
+function axisAngleMatrix(n,theta){
+    var c=Math.cos(theta),s=Math.sin(theta),t=1-c;
+    return[
+        [t*n[0]*n[0]+c,     t*n[0]*n[1]-s*n[2], t*n[0]*n[2]+s*n[1]],
+        [t*n[1]*n[0]+s*n[2], t*n[1]*n[1]+c,     t*n[1]*n[2]-s*n[0]],
+        [t*n[2]*n[0]-s*n[1], t*n[2]*n[1]+s*n[0], t*n[2]*n[2]+c]
+    ];
+}
+
+// ============================================================
+//  캔버스 1 — 축-각 시각화
+// ============================================================
+(function(){
+    var c=createCanvas('cvsAxisAngle',{width:600,height:500,unit:70});
+    var rawNx=0, rawNy=100, rawNz=0, theta=60;
+
+    var nxS=document.getElementById('snx'),nyS=document.getElementById('sny'),nzS=document.getElementById('snz'),thS=document.getElementById('theta');
+    var nxV=document.getElementById('snxV'),nyV=document.getElementById('snyV'),nzV=document.getElementById('snzV'),thV=document.getElementById('thetaV');
+
+    function syncSliderLabels(){
+        var n=getAxis();
+        nxV.textContent=n[0].toFixed(2);nyV.textContent=n[1].toFixed(2);nzV.textContent=n[2].toFixed(2);
+    }
+    nxS.addEventListener('input',function(e){rawNx=parseInt(e.target.value);syncSliderLabels();render();});
+    nyS.addEventListener('input',function(e){rawNy=parseInt(e.target.value);syncSliderLabels();render();});
+    nzS.addEventListener('input',function(e){rawNz=parseInt(e.target.value);syncSliderLabels();render();});
+    thS.addEventListener('input',function(e){theta=parseInt(e.target.value);thV.textContent=theta+'°';render();});
+
+    // 프리셋
+    document.querySelectorAll('#axis-angle .preset-row .pbtn').forEach(function(btn){
+        btn.addEventListener('click',function(){
+            rawNx=parseInt(btn.dataset.nx);rawNy=parseInt(btn.dataset.ny);rawNz=parseInt(btn.dataset.nz);theta=parseInt(btn.dataset.t);
+            nxS.value=rawNx;nyS.value=rawNy;nzS.value=rawNz;thS.value=theta;
+            thV.textContent=theta+'°';syncSliderLabels();
+            document.querySelectorAll('#axis-angle .preset-row .pbtn').forEach(function(b){b.classList.remove('active');});
+            btn.classList.add('active');render();
+        });
+    });
+
+    function getAxis(){
+        var m=Math.sqrt(rawNx*rawNx+rawNy*rawNy+rawNz*rawNz);
+        if(m<0.001) return[0,1,0]; // fallback
+        return[rawNx/m, rawNy/m, rawNz/m];
+    }
+
+    function render(){
+        c.clear();
+        var ctx=c.ctx;
+        var n=getAxis();
+        var R=axisAngleMatrix(n,theta*RAD);
+
+        // 월드 축 (연한)
+        var I=[[1,0,0],[0,1,0],[0,0,1]];
+        drawAxis3D(c,I,0,2.5,'rgba(232,200,64,0.12)','');
+        drawAxis3D(c,I,1,2.5,'rgba(131,193,103,0.12)','');
+        drawAxis3D(c,I,2,2.5,'rgba(88,196,221,0.12)','');
+
+        // 회전 축 (보라, 양방향)
+        drawVec3D(c,scale3(n,-2.8),scale3(n,2.8),c.colors.accent,'');
+        var ns=c.toS(proj(scale3(n,3)));
+        ctx.fillStyle=c.colors.accent;ctx.font='bold 13px "Noto Sans KR",sans-serif';
+        ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText('축 n̂',ns.x,ns.y-4);
+
+        // 회전된 좌표축
+        drawAxis3D(c,R,0,2.5,c.colors.vecA,'X\'');
+        drawAxis3D(c,R,1,2.5,c.colors.vecC,'Y\'');
+        drawAxis3D(c,R,2,2.5,c.colors.vecB,'Z\'');
+
+        // 회전 호 (축 수직 평면에서)
+        if(Math.abs(theta)>2){
+            var refVec=[1,0,0];
+            if(Math.abs(dot3(n,refVec))>0.9) refVec=[0,1,0];
+            var u=cross3(n,refVec);var um=mag3(u);u=scale3(u,1/um);
+            var v=cross3(n,u);
+            var arcR=1.2;
+            ctx.strokeStyle='rgba(171,107,219,0.4)';ctx.lineWidth=2;
+            ctx.beginPath();
+            var steps=Math.abs(theta);
+            for(var i=0;i<=steps;i++){
+                var a=i/steps*theta*RAD;
+                var p=add3(scale3(u,Math.cos(a)*arcR),scale3(v,Math.sin(a)*arcR));
+                var s=c.toS(proj(p));
+                if(i===0)ctx.moveTo(s.x,s.y);else ctx.lineTo(s.x,s.y);
+            }
+            ctx.stroke();
+            // θ 레이블
+            var mid=theta/2*RAD;
+            var mp=add3(scale3(u,Math.cos(mid)*(arcR+0.3)),scale3(v,Math.sin(mid)*(arcR+0.3)));
+            var ms=c.toS(proj(mp));
+            ctx.fillStyle=c.colors.accent;ctx.font='italic 13px serif';
+            ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('θ',ms.x,ms.y);
+        }
+
+        // 원점
+        var o=c.toS(proj([0,0,0]));
+        ctx.beginPath();ctx.arc(o.x,o.y,4,0,Math.PI*2);ctx.fillStyle='rgba(200,200,220,0.5)';ctx.fill();
+
+        // 패널
+        document.getElementById('aaAxis').innerHTML='<span style="color:var(--accent)">('+fmt(n[0])+', '+fmt(n[1])+', '+fmt(n[2])+')</span>';
+        document.getElementById('aaAngle').innerHTML='<span style="color:var(--accent)">'+theta+'°</span>';
+    }
+    syncSliderLabels();
+    render();
+})();
+
+// ============================================================
+//  캔버스 2 — 로드리게스 분해 시각화
+// ============================================================
+(function(){
+    var c=createCanvas('cvsRodrigues',{width:600,height:500,unit:70});
+    var rodTheta=60;
+    // 고정 축 = y축, 고정 벡터 = (2, 1, 1.5) 정규화 안 함
+    var N=[0,1,0];
+    var V=[2,0.5,1.5];
+
+    var thS=document.getElementById('rodTheta'),thV=document.getElementById('rodThetaV');
+    thS.addEventListener('input',function(e){rodTheta=parseInt(e.target.value);thV.textContent=rodTheta+'°';render();});
+
+    function render(){
+        c.clear();
+        var ctx=c.ctx;
+        var th=rodTheta*RAD;
+
+        // 분해
+        var vDotN=dot3(V,N);
+        var vPar=scale3(N,vDotN);          // 평행 성분
+        var vPerp=add3(V,scale3(vPar,-1));  // 수직 성분
+        var nxv=cross3(N,V);                // n × v
+
+        // 로드리게스 결과
+        var vRot=add3(add3(scale3(V,Math.cos(th)), scale3(nxv,Math.sin(th))), scale3(N,vDotN*(1-Math.cos(th))));
+
+        // 축 (보라 점선)
+        drawDash3D(c,scale3(N,-2.5),scale3(N,2.5),'rgba(171,107,219,0.4)');
+        var ns=c.toS(proj(scale3(N,2.7)));
+        ctx.fillStyle=c.colors.accent;ctx.font='bold 12px "Noto Sans KR",sans-serif';
+        ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText('n̂ (축)',ns.x,ns.y-2);
+
+        // 월드 축 (연한)
+        var I=[[1,0,0],[0,1,0],[0,0,1]];
+        drawAxis3D(c,I,0,2,'rgba(232,200,64,0.08)','');
+        drawAxis3D(c,I,2,2,'rgba(88,196,221,0.08)','');
+
+        // 평행 성분 (축 위 사영, 점선 골드)
+        drawDash3D(c,[0,0,0],vPar,'rgba(232,200,64,0.4)');
+        // 수직 성분 (점선 시안)
+        drawDash3D(c,vPar,V,'rgba(88,196,221,0.3)');
+
+        // n × v (시안)
+        drawVec3D(c,[0,0,0],nxv,'rgba(88,196,221,0.5)','n̂×v');
+
+        // 원래 벡터 (골드)
+        drawVec3D(c,[0,0,0],V,c.colors.vecA,'v');
+
+        // 회전 결과 (그린)
+        drawVec3D(c,[0,0,0],vRot,c.colors.vecC,"v'");
+
+        // 수직면 내 회전 호
+        if(Math.abs(rodTheta)>2){
+            var perpMag=mag3(vPerp);
+            if(perpMag>0.01){
+                var uDir=scale3(vPerp,1/perpMag);
+                var vDir=scale3(cross3(N,vPerp),1/perpMag);
+                ctx.strokeStyle='rgba(131,193,103,0.35)';ctx.lineWidth=1.5;
+                ctx.beginPath();
+                for(var i=0;i<=Math.abs(rodTheta);i++){
+                    var a=i/Math.abs(rodTheta)*th;
+                    var p=add3(vPar,add3(scale3(uDir,Math.cos(a)*perpMag),scale3(vDir,Math.sin(a)*perpMag)));
+                    var s=c.toS(proj(p));
+                    if(i===0)ctx.moveTo(s.x,s.y);else ctx.lineTo(s.x,s.y);
+                }
+                ctx.stroke();
+            }
+        }
+
+        // 원점
+        var o=c.toS(proj([0,0,0]));
+        ctx.beginPath();ctx.arc(o.x,o.y,4,0,Math.PI*2);ctx.fillStyle='rgba(200,200,220,0.5)';ctx.fill();
+
+        // 패널
+        document.getElementById('rodPar').innerHTML='<span class="va">('+fmt(vPar[0])+', '+fmt(vPar[1])+', '+fmt(vPar[2])+')</span> — 불변';
+        document.getElementById('rodPerp').innerHTML='<span class="vb">('+fmt(vPerp[0])+', '+fmt(vPerp[1])+', '+fmt(vPerp[2])+')</span>';
+        document.getElementById('rodCross').innerHTML='<span class="vb">('+fmt(nxv[0])+', '+fmt(nxv[1])+', '+fmt(nxv[2])+')</span>';
+        document.getElementById('rodResult').innerHTML='<span class="vc">('+fmt(vRot[0])+', '+fmt(vRot[1])+', '+fmt(vRot[2])+')</span>';
+    }
+    render();
+})();
+  </script>
+</body>
+</html>

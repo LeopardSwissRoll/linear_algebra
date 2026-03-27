@@ -2,7 +2,7 @@
 // 페이지 추가 시 pages 배열에 항목 추가만 하면 됨. 기존 HTML 수정 불필요.
 
 var NAV_DATA = {
-  xp: { level: 4, percent: 50 },
+  xp: { level: 5, percent: 70 },
 
   // flat 배열 = 페이지 순서. pages[i-1]=prev, pages[i+1]=next (선형, 순환 아님)
   pages: [
@@ -173,6 +173,70 @@ var NAV_DATA = {
       title: "\uCCB4\uD06C\uD3EC\uC778\uD2B8",
       badge: "checkpoint",
       group: "Phase 3 \u2014 \uB3D9\uCC28\uC88C\uD45C\xB7\uD30C\uC774\uD504\uB77C\uC778",
+      subLabel: "\u2705 \uCCB4\uD06C\uD3EC\uC778\uD2B8",
+    },
+
+    // ── Phase 4 ──
+    {
+      id: "p4_01",
+      file: "p4_01_\uC624\uC77C\uB7EC\uAC01\uC758_\uD55C\uACC4.html",
+      title: "\uC624\uC77C\uB7EC \uAC01\uC758 \uD55C\uACC4",
+      badge: "lesson",
+      group: "Phase 4 \u2014 \uD68C\uC804\uC758 \uAE4A\uC740 \uC774\uD574",
+      card: {
+        num: "04",
+        cardTitle: "\uD68C\uC804\uC758 \uAE4A\uC740 \uC774\uD574",
+        desc: "\uC624\uC77C\uB7EC \uAC01\uC758 \uD55C\uACC4, \uCD95-\uAC01, \uCFFC\uD130\uB2C8\uC5B8 \uB300\uC218, qvq* \uC99D\uBA85, Slerp.",
+        tags: ["\uC624\uC77C\uB7EC\uAC01", "\uCFFC\uD130\uB2C8\uC5B8", "Slerp", "\uC9D0\uBC8C\uB77D"],
+      },
+      subLabel: "\uD83D\uDCD0 \uC624\uC77C\uB7EC \uAC01\uC758 \uD55C\uACC4",
+    },
+    {
+      id: "p4_02",
+      file: "p4_02_\uCD95\uAC01\uD45C\uD604\uACFC_\uB85C\uB4DC\uB9AC\uAC8C\uC2A4.html",
+      title: "\uCD95-\uAC01 & \uB85C\uB4DC\uB9AC\uAC8C\uC2A4",
+      badge: "lesson",
+      group: "Phase 4 \u2014 \uD68C\uC804\uC758 \uAE4A\uC740 \uC774\uD574",
+      subLabel: "\uD83D\uDCD0 \uCD95-\uAC01 & \uB85C\uB4DC\uB9AC\uAC8C\uC2A4",
+    },
+    {
+      id: "p4_03",
+      file: "p4_03_\uCFFC\uD130\uB2C8\uC5B8_\uB300\uC218.html",
+      title: "\uCFFC\uD130\uB2C8\uC5B8 \uB300\uC218",
+      badge: "lesson",
+      group: "Phase 4 \u2014 \uD68C\uC804\uC758 \uAE4A\uC740 \uC774\uD574",
+      subLabel: "\uD83D\uDCD0 \uCFFC\uD130\uB2C8\uC5B8 \uB300\uC218",
+    },
+    {
+      id: "p4_04",
+      file: "p4_04_qvq_\uD68C\uC804\uC99D\uBA85.html",
+      title: "qvq* \uD68C\uC804 \uC99D\uBA85",
+      badge: "lesson",
+      group: "Phase 4 \u2014 \uD68C\uC804\uC758 \uAE4A\uC740 \uC774\uD574",
+      subLabel: "\uD83D\uDCD0 qvq* \uD68C\uC804 \uC99D\uBA85",
+    },
+    {
+      id: "p4_05",
+      file: "p4_05_Slerp\uC640_\uBCF4\uAC04.html",
+      title: "Slerp & \uBCF4\uAC04",
+      badge: "lesson",
+      group: "Phase 4 \u2014 \uD68C\uC804\uC758 \uAE4A\uC740 \uC774\uD574",
+      subLabel: "\uD83D\uDCD0 Slerp & \uBCF4\uAC04",
+    },
+    {
+      id: "p4_06",
+      file: "p4_06_\uCFFC\uD130\uB2C8\uC5B8_\uD589\uB82C\uBCC0\uD658\uACFC_\uC774\uC911\uD53C\uBCF5.html",
+      title: "\uCFFC\uD130\uB2C8\uC5B8 \u2194 \uD589\uB82C",
+      badge: "lesson",
+      group: "Phase 4 \u2014 \uD68C\uC804\uC758 \uAE4A\uC740 \uC774\uD574",
+      subLabel: "\uD83D\uDCD0 \uCFFC\uD130\uB2C8\uC5B8 \u2194 \uD589\uB82C",
+    },
+    {
+      id: "p4_07",
+      file: "p4_07_\uCCB4\uD06C\uD3EC\uC778\uD2B8.html",
+      title: "\uCCB4\uD06C\uD3EC\uC778\uD2B8",
+      badge: "checkpoint",
+      group: "Phase 4 \u2014 \uD68C\uC804\uC758 \uAE4A\uC740 \uC774\uD574",
       subLabel: "\u2705 \uCCB4\uD06C\uD3EC\uC778\uD2B8",
     },
   ],

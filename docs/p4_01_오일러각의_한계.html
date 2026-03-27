@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 4 — 오일러 각의 한계 | MyAcademy</title>
+    <link rel="stylesheet" href="style.css">
+    <script>
+    MathJax = { tex: { inlineMath: [['$','$']], displayMath: [['$$','$$']] }, svg: { fontCache: 'global' } };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+    <style>
+        .t-slider-row { display:flex; align-items:center; gap:0.8rem; margin-top:0.4rem; font-size:0.88rem; }
+        .t-slider-row input[type="range"] { flex:1; max-width:240px; accent-color:var(--accent); }
+        .t-slider-row .t-val { font-family:var(--font-code); font-weight:700; color:var(--accent); min-width:3.5rem; }
+        .slider-label { min-width:3rem; font-weight:600; font-size:0.82rem; }
+        .warn-msg { text-align:center; font-weight:700; font-size:1rem; padding:0.5rem; border-radius:8px; margin-top:0.5rem; display:none; }
+        .warn-msg.show { display:block; background:rgba(252,98,85,0.1); color:var(--negative); border:1px solid rgba(252,98,85,0.25); }
+        .cmp-table { width:100%; border-collapse:collapse; margin:1rem 0; font-size:0.85rem; }
+        .cmp-table th, .cmp-table td { padding:0.45rem 0.5rem; border:1px solid var(--border); text-align:center; }
+        .cmp-table th { background:rgba(171,107,219,0.08); color:var(--accent); font-weight:600; font-size:0.75rem; }
+        .cmp-table td:first-child { text-align:left; font-weight:600; color:var(--text-secondary); font-size:0.82rem; }
+    </style>
+</head>
+<body>
+  <header class="header">
+    <button class="hamburger" id="hamburger" aria-label="메뉴"><span></span><span></span><span></span></button>
+    <div class="header-logo">MyAcademy<span class="subtitle">선형대수 × 그래픽스 × AI</span></div>
+    <button class="theme-toggle" id="themeToggle" aria-label="테마 전환"><span class="theme-toggle-icon"></span></button>
+  </header>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <nav class="sidebar" id="sidebar"></nav>
+
+  <main class="main-content">
+    <div class="content">
+      <div class="page-title">
+        <div class="tag tag-lesson">PHASE 4</div>
+        <h1>오일러 각의 한계</h1>
+        <p class="page-desc">Roll-Pitch-Yaw는 직관적이지만, 짐벌 락과 보간 문제를 피할 수 없다</p>
+      </div>
+
+      <!-- ══════════ 1. 오일러 각 탐색기 ══════════ -->
+      <section>
+        <h2 id="euler">오일러 각 탐색기</h2>
+        <p>Yaw(좌우) · Pitch(끄덕) · Roll(갸웃). 3D 좌표축이 세 번의 축 회전으로 어떻게 변하는지 확인해봐.</p>
+        <div class="interactive-section" style="flex-direction:column;align-items:center;">
+          <div class="canvas-wrap">
+            <canvas id="cvsEuler" width="600" height="500"></canvas>
+            <div class="t-slider-row"><span class="slider-label">Yaw</span><input type="range" id="slYaw" min="-180" max="180" step="1" value="30"><span class="t-val" id="vYaw">30°</span></div>
+            <div class="t-slider-row"><span class="slider-label">Pitch</span><input type="range" id="slPitch" min="-90" max="90" step="1" value="0"><span class="t-val" id="vPitch">0°</span></div>
+            <div class="t-slider-row"><span class="slider-label">Roll</span><input type="range" id="slRoll" min="-180" max="180" step="1" value="0"><span class="t-val" id="vRoll">0°</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ 1.5 순서 비교 ══════════ -->
+      <section>
+        <h2 id="order">순서가 다르면 결과가 다르다</h2>
+        <p>같은 Pitch=90°, Yaw=90°를 <strong>순서만 바꿔서</strong> 적용. 3D 회전은 비교환!</p>
+        <div class="interactive-section" style="flex-direction:column;align-items:center;">
+          <div class="canvas-wrap">
+            <canvas id="cvsOrder" width="600" height="400"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ 2. 짐벌 락 ══════════ -->
+      <section>
+        <h2 id="gimbal">짐벌 락 — 자유도를 잃는 순간</h2>
+        <p>Pitch를 90°로 올려봐. <strong>Yaw와 Roll이 같은 축</strong>을 돌리게 된다 — 자유도 하나를 잃는다.</p>
+        <div class="formula-box">
+          <p class="note">Pitch=90°일 때 $R_x(90°)$가 y축과 z축을 정렬. Yaw든 Roll이든 같은 축을 중심으로 회전 → $\psi + \phi$만 의미. 독립 조절 불가.</p>
+        </div>
+
+        <div class="interactive-section" style="flex-direction:column;align-items:center;">
+          <div class="canvas-wrap">
+            <canvas id="cvsGimbal" width="600" height="500"></canvas>
+            <div class="t-slider-row"><span class="slider-label">Yaw</span><input type="range" id="gYaw" min="-180" max="180" step="1" value="0"><span class="t-val" id="gYawV">0°</span></div>
+            <div class="t-slider-row"><span class="slider-label">Pitch</span><input type="range" id="gPitch" min="-90" max="90" step="1" value="0"><span class="t-val" id="gPitchV">0°</span></div>
+            <div class="t-slider-row"><span class="slider-label">Roll</span><input type="range" id="gRoll" min="-180" max="180" step="1" value="0"><span class="t-val" id="gRollV">0°</span></div>
+            <div class="warn-msg" id="gimbalWarn">짐벌 락! Yaw와 Roll이 같은 축을 돌린다</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ 3. 문제점 ══════════ -->
+      <section>
+        <h2 id="problems">보간과 순서 문제</h2>
+        <div class="info-cards">
+          <div class="info-card">
+            <h4>순서 의존성</h4>
+            <p>$R_x(90°) R_y(90°) \neq R_y(90°) R_x(90°)$. 2D 회전은 교환 가능했지만 3D는 불가.</p>
+          </div>
+          <div class="info-card">
+            <h4>보간 불균일</h4>
+            <p>오일러 각 Lerp: 경로가 곡선, 각속도 불균일, 짐벌 락 근처에서 튀김. Slerp 비교는 p4_05에서.</p>
+          </div>
+          <div class="info-card">
+            <h4>그래도 쓰는 이유</h4>
+            <p>직관적, 3개 숫자로 저장, UI 슬라이더 친화. FPS 카메라는 Pitch ±85°로 제한하면 OK.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ 4. 비교표 ══════════ -->
+      <section>
+        <h2 id="comparison">회전 표현 비교 — Phase 4 로드맵</h2>
+        <table class="cmp-table">
+          <thead><tr><th></th><th>오일러 각</th><th>행렬 3×3</th><th>축-각</th><th>쿼터니언</th></tr></thead>
+          <tbody>
+            <tr><td>저장</td><td>3</td><td>9</td><td>4</td><td>4</td></tr>
+            <tr><td>적용</td><td>3번 행렬곱</td><td>1번 행렬곱</td><td>로드리게스</td><td>$qvq^*$</td></tr>
+            <tr><td>합성</td><td>복잡</td><td>행렬곱</td><td>불편</td><td>쿼터니언곱</td></tr>
+            <tr><td>보간</td><td>불균일</td><td>힘듬</td><td>힘듬</td><td>Slerp</td></tr>
+            <tr><td>짐벌락</td><td style="color:var(--negative);font-weight:700">있음</td><td>없음</td><td>없음</td><td>없음</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ══════════ 5. 직접 해보기 ══════════ -->
+      <section class="exercises">
+        <h2 id="exercises">직접 해보기</h2>
+        <ol>
+          <li><strong>단일 축:</strong> 탐색기에서 Yaw만 돌려봐 (Pitch=Roll=0). 어떤 축을 중심으로?</li>
+          <li><strong>짐벌 락:</strong> 짐벌 캔버스에서 Pitch를 90°로. Yaw와 Roll이 같은 효과인지 확인.</li>
+          <li><strong>순서 비교:</strong> 순서 캔버스에서 YX(초록)와 XY(시안)가 다른 걸 확인. 왜?</li>
+          <li><strong>FPS 제한:</strong> Pitch를 ±85°로 제한하면 짐벌 락 회피. 왜 89°가 아니라 85°?</li>
+          <li><strong>비교표:</strong> 쿼터니언의 장점을 한 줄로 정리해봐.</li>
+        </ol>
+      </section>
+    </div>
+
+    <div class="page-nav" id="page-nav"></div>
+
+    <script>
+    var PAGE_ID = "p4_01";
+    var ON_THIS_PAGE = [
+      { id: "euler", label: "오일러 각 탐색기" },
+      { id: "order", label: "순서 비교" },
+      { id: "gimbal", label: "짐벌 락" },
+      { id: "problems", label: "보간·순서 문제" },
+      { id: "comparison", label: "비교표" },
+      { id: "exercises", label: "직접 해보기" }
+    ];
+    </script>
+    <script src="nav.js"></script>
+  </main>
+
+  <script src="canvas-lib.js"></script>
+  <script>
+var RAD=Math.PI/180;
+function fmt(n){return n.toFixed(1);}
+
+// ============================================================
+//  3D 수학
+// ============================================================
+function rotX(a){var c=Math.cos(a),s=Math.sin(a);return[[1,0,0],[0,c,-s],[0,s,c]];}
+function rotY(a){var c=Math.cos(a),s=Math.sin(a);return[[c,0,s],[0,1,0],[-s,0,c]];}
+function rotZ(a){var c=Math.cos(a),s=Math.sin(a);return[[c,-s,0],[s,c,0],[0,0,1]];}
+function mulM3(A,B){
+    var R=[[0,0,0],[0,0,0],[0,0,0]];
+    for(var i=0;i<3;i++)for(var j=0;j<3;j++)for(var k=0;k<3;k++)R[i][j]+=A[i][k]*B[k][j];
+    return R;
+}
+function mulV3(M,v){return[M[0][0]*v[0]+M[0][1]*v[1]+M[0][2]*v[2],M[1][0]*v[0]+M[1][1]*v[1]+M[1][2]*v[2],M[2][0]*v[0]+M[2][1]*v[1]+M[2][2]*v[2]];}
+
+// 등축 투영 (3D→2D)
+function proj(p){return{x:(p[0]-p[2])*0.82, y:-p[1]+(p[0]+p[2])*0.38};}
+
+// 3D 축 화살표 그리기
+function drawAxis3D(c,M,axisIdx,len,color,label){
+    var dir=[0,0,0]; dir[axisIdx]=len;
+    var tip=mulV3(M,dir);
+    var o=c.toS(proj([0,0,0]));
+    var t=c.toS(proj(tip));
+    var ctx=c.ctx;
+    ctx.save();ctx.shadowColor=color;ctx.shadowBlur=4;
+    ctx.strokeStyle=color;ctx.lineWidth=3;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(o.x,o.y);ctx.lineTo(t.x,t.y);ctx.stroke();
+    c.arrowhead(o.x,o.y,t.x,t.y,color);
+    ctx.restore();
+    ctx.fillStyle=color;ctx.font='bold italic 15px serif';
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    var d={x:t.x-o.x,y:t.y-o.y};var dl=Math.sqrt(d.x*d.x+d.y*d.y)||1;
+    ctx.fillText(label,t.x+d.x/dl*16,t.y+d.y/dl*16);
+}
+
+// 짐벌 링 그리기 (3D 원을 등축 투영)
+function drawRing3D(c,M,normalAxis,radius,color,lineW){
+    var ctx=c.ctx;
+    var u=[0,0,0],v=[0,0,0];
+    // normalAxis=0(x),1(y),2(z)
+    if(normalAxis===0){u=[0,1,0];v=[0,0,1];}
+    else if(normalAxis===1){u=[1,0,0];v=[0,0,1];}
+    else{u=[1,0,0];v=[0,1,0];}
+    ctx.strokeStyle=color;ctx.lineWidth=lineW||3;
+    ctx.beginPath();
+    for(var i=0;i<=72;i++){
+        var a=i*Math.PI*2/72;
+        var p=[0,0,0];
+        for(var j=0;j<3;j++) p[j]=(u[j]*Math.cos(a)+v[j]*Math.sin(a))*radius;
+        var rp=mulV3(M,p);
+        var s=c.toS(proj(rp));
+        if(i===0) ctx.moveTo(s.x,s.y); else ctx.lineTo(s.x,s.y);
+    }
+    ctx.stroke();
+}
+
+// ============================================================
+//  캔버스 1.5 — 순서 비교 (Rx·Ry vs Ry·Rx, 90°씩)
+// ============================================================
+(function(){
+    var c=createCanvas('cvsOrder',{width:600,height:400,unit:60});
+    function render(){
+        c.clear();
+        var ctx=c.ctx;
+        var I=[[1,0,0],[0,1,0],[0,0,1]];
+        var Rx90=rotX(90*RAD), Ry90=rotY(90*RAD);
+        var YX=mulM3(Ry90,Rx90); // Ry·Rx = "X먼저, Y나중"
+        var XY=mulM3(Rx90,Ry90); // Rx·Ry = "Y먼저, X나중"
+
+        // 분할선
+        ctx.strokeStyle='rgba(100,100,160,0.2)';ctx.lineWidth=1;ctx.setLineDash([6,4]);
+        ctx.beginPath();ctx.moveTo(300,0);ctx.lineTo(300,400);ctx.stroke();ctx.setLineDash([]);
+
+        // 왼쪽: Ry·Rx (Y→X)
+        ctx.save();ctx.translate(-140,0);
+        drawAxis3D(c,I,0,1.8,'rgba(232,200,64,0.1)','');
+        drawAxis3D(c,I,1,1.8,'rgba(131,193,103,0.1)','');
+        drawAxis3D(c,I,2,1.8,'rgba(88,196,221,0.1)','');
+        drawAxis3D(c,YX,0,2.2,c.colors.vecA,'X');
+        drawAxis3D(c,YX,1,2.2,c.colors.vecC,'Y');
+        drawAxis3D(c,YX,2,2.2,c.colors.vecB,'Z');
+        ctx.restore();
+        ctx.fillStyle='rgba(131,193,103,0.8)';ctx.font='bold 13px "Noto Sans KR",sans-serif';
+        ctx.textAlign='center';ctx.textBaseline='top';
+        ctx.fillText('Ry(90°) · Rx(90°)',150,10);
+        ctx.fillStyle='rgba(200,200,220,0.5)';ctx.font='11px "Noto Sans KR",sans-serif';
+        ctx.fillText('= X 먼저, Y 나중',150,28);
+
+        // 오른쪽: Rx·Ry (X→Y)
+        ctx.save();ctx.translate(140,0);
+        drawAxis3D(c,I,0,1.8,'rgba(232,200,64,0.1)','');
+        drawAxis3D(c,I,1,1.8,'rgba(131,193,103,0.1)','');
+        drawAxis3D(c,I,2,1.8,'rgba(88,196,221,0.1)','');
+        drawAxis3D(c,XY,0,2.2,c.colors.vecA,'X');
+        drawAxis3D(c,XY,1,2.2,c.colors.vecC,'Y');
+        drawAxis3D(c,XY,2,2.2,c.colors.vecB,'Z');
+        ctx.restore();
+        ctx.fillStyle='rgba(88,196,221,0.8)';ctx.font='bold 13px "Noto Sans KR",sans-serif';
+        ctx.textAlign='center';
+        ctx.fillText('Rx(90°) · Ry(90°)',450,10);
+        ctx.fillStyle='rgba(200,200,220,0.5)';ctx.font='11px "Noto Sans KR",sans-serif';
+        ctx.fillText('= Y 먼저, X 나중',450,28);
+
+        // 중앙 메시지
+        ctx.fillStyle='rgba(252,98,85,0.7)';ctx.font='bold 14px "Noto Sans KR",sans-serif';
+        ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillText('≠',300,200);
+        ctx.fillStyle='rgba(200,200,220,0.5)';ctx.font='11px "Noto Sans KR",sans-serif';
+        ctx.fillText('같은 각도, 다른 순서',300,220);
+        ctx.fillText('→ 완전히 다른 결과!',300,235);
+    }
+    render();
+})();
+
+// ============================================================
+//  캔버스 1 — 오일러 각 탐색기
+// ============================================================
+(function(){
+    var c=createCanvas('cvsEuler',{width:600,height:500,unit:70});
+    var yaw=30,pitch=0,roll=0;
+    var yS=document.getElementById('slYaw'),pS=document.getElementById('slPitch'),rS=document.getElementById('slRoll');
+    var yV=document.getElementById('vYaw'),pV=document.getElementById('vPitch'),rV=document.getElementById('vRoll');
+    yS.addEventListener('input',function(e){yaw=parseInt(e.target.value);yV.textContent=yaw+'°';render();});
+    pS.addEventListener('input',function(e){pitch=parseInt(e.target.value);pV.textContent=pitch+'°';render();});
+    rS.addEventListener('input',function(e){roll=parseInt(e.target.value);rV.textContent=roll+'°';render();});
+
+    function render(){
+        c.clear();
+        var ctx=c.ctx;
+        // 연한 월드 축 (고정)
+        var I=[[1,0,0],[0,1,0],[0,0,1]];
+        drawAxis3D(c,I,0,2.5,'rgba(232,200,64,0.15)','');
+        drawAxis3D(c,I,1,2.5,'rgba(131,193,103,0.15)','');
+        drawAxis3D(c,I,2,2.5,'rgba(88,196,221,0.15)','');
+
+        // 오일러 회전: R = Ry(yaw) · Rx(pitch) · Rz(roll)
+        var R=mulM3(rotY(yaw*RAD),mulM3(rotX(pitch*RAD),rotZ(roll*RAD)));
+        drawAxis3D(c,R,0,3,c.colors.vecA,'X');
+        drawAxis3D(c,R,1,3,c.colors.vecC,'Y');
+        drawAxis3D(c,R,2,3,c.colors.vecB,'Z');
+
+        // 원점
+        var o=c.toS(proj([0,0,0]));
+        ctx.beginPath();ctx.arc(o.x,o.y,4,0,Math.PI*2);
+        ctx.fillStyle='rgba(200,200,220,0.5)';ctx.fill();
+
+        // 레이블
+        ctx.fillStyle='rgba(200,200,220,0.4)';ctx.font='11px "Noto Sans KR",sans-serif';
+        ctx.textAlign='left';ctx.textBaseline='top';
+        ctx.fillText('Yaw='+yaw+'° Pitch='+pitch+'° Roll='+roll+'°',10,10);
+    }
+    render();
+})();
+
+// ============================================================
+//  캔버스 2 — 짐벌 락 데모 (3링)
+// ============================================================
+(function(){
+    var c=createCanvas('cvsGimbal',{width:600,height:500,unit:70});
+    var yaw=0,pitch=0,roll=0;
+    var yS=document.getElementById('gYaw'),pS=document.getElementById('gPitch'),rS=document.getElementById('gRoll');
+    var yV=document.getElementById('gYawV'),pV=document.getElementById('gPitchV'),rV=document.getElementById('gRollV');
+    var warn=document.getElementById('gimbalWarn');
+    yS.addEventListener('input',function(e){yaw=parseInt(e.target.value);yV.textContent=yaw+'°';render();});
+    pS.addEventListener('input',function(e){pitch=parseInt(e.target.value);pV.textContent=pitch+'°';render();});
+    rS.addEventListener('input',function(e){roll=parseInt(e.target.value);rV.textContent=roll+'°';render();});
+
+    function render(){
+        c.clear();
+        var ctx=c.ctx;
+        var isLocked=Math.abs(pitch)>=88;
+        warn.className='warn-msg'+(isLocked?' show':'');
+
+        // 짐벌 링 3개 (바깥→안쪽: Yaw→Pitch→Roll)
+        var I=[[1,0,0],[0,1,0],[0,0,1]];
+
+        // 링 1 (Yaw — y축 회전): 바깥, 고정 참조
+        drawRing3D(c,I,1,3.2,'rgba(232,200,64,0.3)',2);
+
+        // Yaw 적용 후
+        var Ry=rotY(yaw*RAD);
+
+        // 링 2 (Pitch — x축 회전, Yaw 적용 후)
+        drawRing3D(c,Ry,0,2.6,'rgba(131,193,103,0.5)',3);
+
+        // Yaw+Pitch 적용 후
+        var RyRx=mulM3(Ry,rotX(pitch*RAD));
+
+        // 링 3 (Roll — z축 회전, Yaw+Pitch 적용 후)
+        var ringColor=isLocked?'rgba(252,98,85,0.8)':'rgba(88,196,221,0.5)';
+        drawRing3D(c,RyRx,2,2.0,ringColor,3);
+
+        // 각 축 표시
+        var yawAxis=mulV3(I,[0,2.2,0]);
+        var pitchAxis=mulV3(Ry,[2.2,0,0]);
+        var rollAxis=mulV3(RyRx,[0,0,2.2]);
+
+        // 축 화살표 (짧게)
+        drawAxis3D(c,I,1,2.2,'rgba(232,200,64,0.6)','Yaw');
+        drawAxis3D(c,Ry,0,2.2,'rgba(131,193,103,0.6)','Pitch');
+
+        var rollColor=isLocked?c.colors.proj:'rgba(88,196,221,0.6)';
+        drawAxis3D(c,RyRx,2,2.2,rollColor,'Roll');
+
+        // 잠금 시 Yaw축과 Roll축이 같은 방향 표시
+        if(isLocked){
+            ctx.fillStyle='rgba(252,98,85,0.8)';ctx.font='bold 13px "Noto Sans KR",sans-serif';
+            ctx.textAlign='center';ctx.textBaseline='bottom';
+            var o=c.toS(proj([0,0,0]));
+            ctx.fillText('Yaw↑ = Roll↑ — 같은 축!',o.x,o.y-20);
+        }
+
+        // 최종 회전 결과 (좌표축)
+        var R=mulM3(rotY(yaw*RAD),mulM3(rotX(pitch*RAD),rotZ(roll*RAD)));
+        drawAxis3D(c,R,0,1.5,'rgba(232,200,64,0.2)','');
+        drawAxis3D(c,R,1,1.5,'rgba(131,193,103,0.2)','');
+        drawAxis3D(c,R,2,1.5,'rgba(88,196,221,0.2)','');
+
+        // 원점
+        var o=c.toS(proj([0,0,0]));
+        ctx.beginPath();ctx.arc(o.x,o.y,4,0,Math.PI*2);
+        ctx.fillStyle='rgba(200,200,220,0.5)';ctx.fill();
+    }
+    render();
+})();
+  </script>
+</body>
+</html>

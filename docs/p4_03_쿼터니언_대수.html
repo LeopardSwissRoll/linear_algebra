@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 4 — 쿼터니언 대수 | MyAcademy</title>
+    <link rel="stylesheet" href="style.css">
+    <script>
+    MathJax = { tex: { inlineMath: [['$','$']], displayMath: [['$$','$$']] }, svg: { fontCache: 'global' } };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+    <style>
+        .mul-table { border-collapse:collapse; margin:1rem auto; font-family:var(--font-code); font-size:0.95rem; }
+        .mul-table th, .mul-table td { width:3.2rem; height:2.5rem; text-align:center; border:1px solid var(--border); }
+        .mul-table th { background:rgba(171,107,219,0.1); color:var(--accent); font-weight:700; }
+        .mul-table td.pos { color:var(--positive); font-weight:700; }
+        .mul-table td.neg { color:var(--negative); font-weight:700; }
+        .mul-table td.hl { background:rgba(171,107,219,0.15); }
+        .quat-input { display:flex; gap:0.4rem; align-items:center; flex-wrap:wrap; margin:0.4rem 0; }
+        .quat-input label { font-size:0.8rem; color:var(--text-secondary); font-weight:600; min-width:1.2rem; }
+        .quat-input input { width:3.5rem; text-align:center; background:var(--bg-surface); border:1px solid var(--border); color:var(--text-primary); font-family:var(--font-code); font-size:0.9rem; padding:0.3rem; border-radius:4px; }
+        .quat-input input:focus { border-color:var(--accent); outline:none; }
+        .eq-badge { text-align:center; font-weight:700; font-size:0.9rem; padding:0.4rem; border-radius:8px; margin:0.5rem 0; }
+        .eq-badge.yes { background:rgba(131,193,103,0.1); color:var(--positive); }
+        .eq-badge.no { background:rgba(252,98,85,0.08); color:var(--negative); }
+        .cycle-arrow { display:inline-block; font-size:1.5rem; vertical-align:middle; }
+    </style>
+</head>
+<body>
+  <header class="header">
+    <button class="hamburger" id="hamburger" aria-label="메뉴"><span></span><span></span><span></span></button>
+    <div class="header-logo">MyAcademy<span class="subtitle">선형대수 × 그래픽스 × AI</span></div>
+    <button class="theme-toggle" id="themeToggle" aria-label="테마 전환"><span class="theme-toggle-icon"></span></button>
+  </header>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <nav class="sidebar" id="sidebar"></nav>
+
+  <main class="main-content">
+    <div class="content">
+      <div class="page-title">
+        <div class="tag tag-lesson">PHASE 4</div>
+        <h1>쿼터니언 대수</h1>
+        <p class="page-desc">$i^2 = j^2 = k^2 = ijk = -1$ — 이 하나에서 모든 곱셈 규칙이 나온다</p>
+      </div>
+
+      <!-- ══════════ 1. 복소수 → 쿼터니언 ══════════ -->
+      <section>
+        <h2 id="from-complex">복소수에서 쿼터니언으로</h2>
+        <div class="info-cards">
+          <div class="info-card">
+            <h4>복소수 (p2_02)</h4>
+            <p>$z = a + bi$, $i^2 = -1$. 기저 2개 $\{1, i\}$. 2D 회전.</p>
+          </div>
+          <div class="info-card">
+            <h4>쿼터니언 (해밀턴, 1843)</h4>
+            <p>$q = w + xi + yj + zk$. 기저 4개 $\{1, i, j, k\}$. 3D 회전.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ 2. 기본 정리 ══════════ -->
+      <section>
+        <h2 id="fundamental">기본 정리 — 곱셈표 유도</h2>
+        <div class="formula-box">
+          $$i^2 = j^2 = k^2 = ijk = -1$$
+          <p class="note">이 하나의 식에서 모든 곱셈 규칙이 나온다.</p>
+        </div>
+
+        <h3>유도</h3>
+        <p>$ijk = -1$의 양변에 $k$를 오른쪽 곱: $ij(kk) = -k \implies ij(-1) = -k \implies ij = k$</p>
+        <p>$ijk = -1$의 양변에 $i$를 왼쪽 곱: $(ii)jk = -i \implies -jk = -i \implies jk = i$</p>
+        <p>같은 방식으로: $ki = j$. 역순은 부호 반전: $ji = -k$, $kj = -i$, $ik = -j$.</p>
+
+        <h3>곱셈표</h3>
+        <div class="interactive-section" style="flex-direction:column;align-items:center;">
+          <div class="canvas-wrap">
+            <canvas id="cvsMulTable" width="600" height="400"></canvas>
+          </div>
+        </div>
+
+        <div class="callout">
+          <div class="callout-title">비교환! $ij = k$ 하지만 $ji = -k$</div>
+          <p style="margin-bottom:0;">순환 규칙: $i \to j \to k \to i$ 순서면 양(+), 역순이면 음(−). 외적 $\vec{e_x} \times \vec{e_y} = \vec{e_z}$와 같은 패턴!</p>
+        </div>
+      </section>
+
+      <!-- ══════════ 3. 곱셈 ══════════ -->
+      <section>
+        <h2 id="multiplication">쿼터니언 곱셈</h2>
+        <div class="formula-box">
+          <p style="font-weight:600;color:var(--text-primary);margin-bottom:0.3rem;">스칼라-벡터 표기: $q = (s, \vec{v})$</p>
+          $$q_1 q_2 = (s_1 s_2 - \vec{v_1}\cdot\vec{v_2},\;\; s_1\vec{v_2} + s_2\vec{v_1} + \vec{v_1}\times\vec{v_2})$$
+          <p class="note">외적이 들어가니까 비교환! $\vec{v_1}\times\vec{v_2} = -\vec{v_2}\times\vec{v_1}$</p>
+        </div>
+
+        <h3>곱셈 계산기</h3>
+        <div class="interactive-section" style="flex-direction:column;align-items:center;">
+          <div style="max-width:500px;width:100%;">
+            <div class="quat-input">
+              <span style="font-weight:700;color:var(--vec-a);min-width:2rem;">q₁ =</span>
+              <label>w</label><input id="q1w" value="0">
+              <label>x</label><input id="q1x" value="1">
+              <label>y</label><input id="q1y" value="0">
+              <label>z</label><input id="q1z" value="0">
+            </div>
+            <div class="quat-input">
+              <span style="font-weight:700;color:var(--vec-b);min-width:2rem;">q₂ =</span>
+              <label>w</label><input id="q2w" value="0">
+              <label>x</label><input id="q2x" value="0">
+              <label>y</label><input id="q2y" value="1">
+              <label>z</label><input id="q2z" value="0">
+            </div>
+          </div>
+          <div class="eq-badge" id="commBadge"></div>
+          <div class="math-panel" style="width:100%;max-width:500px;min-width:unset;">
+            <div class="calc-group">
+              <div class="label">q₁ · q₂</div>
+              <div class="calc-row" id="q1q2"></div>
+            </div>
+            <div class="calc-group">
+              <div class="label">q₂ · q₁</div>
+              <div class="calc-row" id="q2q1"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ 4. 켤레/노름/역 ══════════ -->
+      <section>
+        <h2 id="properties">켤레, 노름, 역</h2>
+        <div class="formula-box">
+          <p style="margin-bottom:0.3rem;">켤레: $q^* = (w, -x, -y, -z)$ &nbsp; 노름: $|q| = \sqrt{w^2+x^2+y^2+z^2}$ &nbsp; 역: $q^{-1} = q^*/|q|^2$</p>
+          <p class="note">단위 쿼터니언 ($|q|=1$)이면 $q^{-1} = q^*$. 역 = 켤레!</p>
+        </div>
+        <div class="info-cards">
+          <div class="info-card"><h4>$qq^* = |q|^2$ (실수)</h4><p>복소수 $z\bar{z} = |z|^2$와 동일.</p></div>
+          <div class="info-card"><h4>$|q_1 q_2| = |q_1||q_2|$</h4><p>노름의 곱 = 곱의 노름.</p></div>
+          <div class="info-card"><h4>$(q_1 q_2)^* = q_2^* q_1^*$</h4><p>순서 뒤집힘! $(AB)^{-1} = B^{-1}A^{-1}$ 패턴.</p></div>
+        </div>
+      </section>
+
+      <!-- ══════════ 5. 단위 구면 ══════════ -->
+      <section>
+        <h2 id="unit-sphere">단위 쿼터니언 = $S^3$</h2>
+        <div class="formula-box">
+          $$w^2 + x^2 + y^2 + z^2 = 1 \quad \longleftrightarrow \quad S^3 \text{ (4D 단위 구면)}$$
+          <p class="note">모든 3D 회전은 $S^3$ 위의 한 점. 이 구면 위에서 보간 = Slerp (p4_05).</p>
+        </div>
+      </section>
+
+      <!-- ══════════ 6. 축-각 변환 ══════════ -->
+      <section>
+        <h2 id="axis-to-quat">축-각 → 쿼터니언</h2>
+        <div class="formula-box">
+          $$q = \cos\frac{\theta}{2} + \sin\frac{\theta}{2}(n_x i + n_y j + n_z k) = \left(\cos\frac{\theta}{2},\;\sin\frac{\theta}{2}\cdot\hat{n}\right)$$
+          <p class="note">왜 $\theta/2$인지는 p4_04에서 ($qvq^*$ 증명 후에). 지금은 변환 공식만.</p>
+        </div>
+      </section>
+
+      <!-- ══════════ 7. 직접 해보기 ══════════ -->
+      <section class="exercises">
+        <h2 id="exercises">직접 해보기</h2>
+        <ol>
+          <li><strong>곱셈표:</strong> 캔버스에서 $k \times i$를 클릭. 결과가 $j$인지 확인.</li>
+          <li><strong>비교환:</strong> 계산기에서 $q_1=i$, $q_2=j$. $q_1q_2$와 $q_2q_1$의 부호 차이.</li>
+          <li><strong>켤레:</strong> $q = (1,2,3,4)$의 $qq^*$를 계산기에 넣어봐. 결과가 $|q|^2 = 30$?</li>
+          <li><strong>단위 쿼터니언:</strong> $q = (\cos45°, \sin45°, 0, 0)$. $|q|$는?</li>
+          <li><strong>외적 연결:</strong> 곱셈 공식에서 외적이 0이면 교환 가능. 언제 0?</li>
+        </ol>
+      </section>
+    </div>
+
+    <div class="page-nav" id="page-nav"></div>
+
+    <script>
+    var PAGE_ID = "p4_03";
+    var ON_THIS_PAGE = [
+      { id: "from-complex", label: "복소수 → 쿼터니언" },
+      { id: "fundamental", label: "기본 정리" },
+      { id: "multiplication", label: "곱셈" },
+      { id: "properties", label: "켤레·노름·역" },
+      { id: "unit-sphere", label: "S³" },
+      { id: "axis-to-quat", label: "축-각 → 쿼터니언" },
+      { id: "exercises", label: "직접 해보기" }
+    ];
+    </script>
+    <script src="nav.js"></script>
+  </main>
+
+  <script src="canvas-lib.js"></script>
+  <script>
+function fmt(n){return n.toFixed(2);}
+
+// ============================================================
+//  곱셈표 캔버스 — 인터랙티브
+// ============================================================
+(function(){
+    var c = createCanvas('cvsMulTable', {width:600, height:400, unit:50});
+    var ctx = c.ctx;
+
+    // 곱셈표 데이터: result[row][col] = {label, sign}
+    var BASES = ['1','i','j','k'];
+    var TABLE = [
+        ['1','i','j','k'],
+        ['i','-1','k','-j'],
+        ['j','-k','-1','i'],
+        ['k','j','-i','-1']
+    ];
+    var SIGNS = [
+        [1,1,1,1],
+        [1,-1,1,-1],
+        [1,-1,-1,1],
+        [1,1,-1,-1]
+    ];
+
+    var hoverR=-1, hoverC=-1;
+
+    // 테이블 영역
+    var TX=120, TY=60, CW=90, CH=65;
+
+    function render(){
+        c.clear();
+
+        // 순환 다이어그램 (오른쪽)
+        var cx=490, cy=200, cr=60;
+        ctx.strokeStyle='rgba(171,107,219,0.3)';ctx.lineWidth=2;
+        ctx.beginPath();ctx.arc(cx,cy,cr,0,Math.PI*2);ctx.stroke();
+
+        var labels=['i','j','k'];
+        var colors=[PALETTE.vecA, PALETTE.vecB, PALETTE.vecC];
+        for(var i=0;i<3;i++){
+            var a = -Math.PI/2 + i*Math.PI*2/3;
+            var px=cx+Math.cos(a)*cr, py=cy+Math.sin(a)*cr;
+            ctx.beginPath();ctx.arc(px,py,14,0,Math.PI*2);
+            ctx.fillStyle=colors[i];ctx.fill();
+            ctx.fillStyle='#fff';ctx.font='bold 14px serif';
+            ctx.textAlign='center';ctx.textBaseline='middle';
+            ctx.fillText(labels[i],px,py);
+
+            // 화살표 (순방향)
+            var a2=-Math.PI/2+(i+1)*Math.PI*2/3;
+            var mid=(a+a2)/2;
+            var mx=cx+Math.cos(mid)*(cr+18), my=cy+Math.sin(mid)*(cr+18);
+            ctx.fillStyle='rgba(131,193,103,0.6)';ctx.font='bold 11px sans-serif';
+            ctx.fillText('+',mx,my);
+        }
+        ctx.fillStyle='rgba(200,200,220,0.5)';ctx.font='11px "Noto Sans KR",sans-serif';
+        ctx.textAlign='center';ctx.fillText('순방향 = +',cx,cy+cr+35);
+        ctx.fillText('역방향 = −',cx,cy+cr+50);
+
+        // 곱셈표 헤더
+        ctx.fillStyle='rgba(171,107,219,0.7)';ctx.font='bold 14px "Cascadia Code",Consolas,monospace';
+        ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillText('×',TX-CW/2,TY-CH/2);
+
+        for(var i=0;i<4;i++){
+            // 열 헤더
+            ctx.fillStyle='rgba(171,107,219,0.7)';
+            ctx.fillText(BASES[i],TX+i*CW+CW/2,TY-CH/2);
+            // 행 헤더
+            ctx.fillText(BASES[i],TX-CW/2,TY+i*CH+CH/2);
+        }
+
+        // 셀
+        for(var r=0;r<4;r++){
+            for(var cl=0;cl<4;cl++){
+                var x=TX+cl*CW, y=TY+r*CH;
+                var isHovered=(r===hoverR&&cl===hoverC);
+
+                // 배경
+                if(isHovered){
+                    ctx.fillStyle='rgba(171,107,219,0.2)';
+                    ctx.fillRect(x,y,CW,CH);
+                    // 행/열 하이라이트
+                    ctx.fillStyle='rgba(171,107,219,0.06)';
+                    ctx.fillRect(TX,y,CW*4,CH);
+                    ctx.fillRect(x,TY,CW,CH*4);
+                }
+
+                // 테두리
+                ctx.strokeStyle='rgba(100,100,160,0.15)';ctx.lineWidth=1;
+                ctx.strokeRect(x,y,CW,CH);
+
+                // 값
+                var val=TABLE[r][cl];
+                var sign=SIGNS[r][cl];
+                ctx.fillStyle=sign>0?PALETTE.positive:PALETTE.negative;
+                ctx.font=(isHovered?'bold ':'')+' 16px "Cascadia Code",Consolas,monospace';
+                ctx.textAlign='center';ctx.textBaseline='middle';
+                ctx.fillText(val,x+CW/2,y+CH/2);
+            }
+        }
+
+        // 호버 결과 표시
+        if(hoverR>=0&&hoverC>=0){
+            ctx.fillStyle='#fff';ctx.font='bold 15px "Noto Sans KR",sans-serif';
+            ctx.textAlign='center';ctx.textBaseline='top';
+            ctx.fillText(BASES[hoverR]+' × '+BASES[hoverC]+' = '+TABLE[hoverR][hoverC],TX+CW*2,TY+CH*4+15);
+        }
+    }
+
+    // 마우스 호버
+    c.cvs.addEventListener('mousemove',function(e){
+        var rect=c.cvs.getBoundingClientRect();
+        var mx=(e.clientX-rect.left)*600/rect.width;
+        var my=(e.clientY-rect.top)*400/rect.height;
+        var col=Math.floor((mx-TX)/CW);
+        var row=Math.floor((my-TY)/CH);
+        if(col>=0&&col<4&&row>=0&&row<4){hoverR=row;hoverC=col;}
+        else{hoverR=-1;hoverC=-1;}
+        render();
+    });
+    c.cvs.addEventListener('mouseleave',function(){hoverR=-1;hoverC=-1;render();});
+
+    render();
+})();
+
+// ============================================================
+//  곱셈 계산기
+// ============================================================
+(function(){
+    var ids=['q1w','q1x','q1y','q1z','q2w','q2x','q2y','q2z'];
+    var inputs=ids.map(function(id){return document.getElementById(id);});
+
+    function getQ(offset){
+        return [parseFloat(inputs[offset].value)||0, parseFloat(inputs[offset+1].value)||0,
+                parseFloat(inputs[offset+2].value)||0, parseFloat(inputs[offset+3].value)||0];
+    }
+    function qMul(a,b){
+        return [
+            a[0]*b[0]-a[1]*b[1]-a[2]*b[2]-a[3]*b[3],
+            a[0]*b[1]+a[1]*b[0]+a[2]*b[3]-a[3]*b[2],
+            a[0]*b[2]-a[1]*b[3]+a[2]*b[0]+a[3]*b[1],
+            a[0]*b[3]+a[1]*b[2]-a[2]*b[1]+a[3]*b[0]
+        ];
+    }
+    function fmtQ(q){return '('+fmt(q[0])+', '+fmt(q[1])+', '+fmt(q[2])+', '+fmt(q[3])+')';}
+    function qEq(a,b){for(var i=0;i<4;i++)if(Math.abs(a[i]-b[i])>0.01)return false;return true;}
+
+    function update(){
+        var q1=getQ(0), q2=getQ(4);
+        var ab=qMul(q1,q2), ba=qMul(q2,q1);
+        document.getElementById('q1q2').innerHTML='<span class="va">'+fmtQ(ab)+'</span>';
+        document.getElementById('q2q1').innerHTML='<span class="vb">'+fmtQ(ba)+'</span>';
+        var eq=qEq(ab,ba);
+        var badge=document.getElementById('commBadge');
+        badge.className='eq-badge '+(eq?'yes':'no');
+        badge.textContent=eq?'q₁q₂ = q₂q₁ (교환 가능)':'q₁q₂ ≠ q₂q₁ (비교환!)';
+    }
+
+    inputs.forEach(function(inp){inp.addEventListener('input',update);});
+    update();
+})();
+  </script>
+</body>
+</html>

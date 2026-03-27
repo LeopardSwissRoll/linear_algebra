@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 4 — Slerp & 보간 | MyAcademy</title>
+    <link rel="stylesheet" href="style.css">
+    <script>
+    MathJax = { tex: { inlineMath: [['$','$']], displayMath: [['$$','$$']] }, svg: { fontCache: 'global' } };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+    <style>
+        .t-slider-row { display:flex; align-items:center; gap:0.8rem; margin-top:0.4rem; font-size:0.88rem; }
+        .t-slider-row input[type="range"] { flex:1; max-width:240px; accent-color:var(--accent); }
+        .t-slider-row .t-val { font-family:var(--font-code); font-weight:700; color:var(--accent); min-width:3.5rem; }
+        .slider-label { min-width:2rem; font-weight:600; font-size:0.82rem; }
+        .pbtn { font-size:0.78rem; padding:0.25rem 0.6rem; background:var(--bg-surface); border:1px solid var(--border); border-radius:4px; cursor:pointer; color:var(--text-primary); font-family:inherit; transition:all 0.2s; }
+        .pbtn:hover, .pbtn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+        .cmp-table { width:100%; border-collapse:collapse; margin:1rem 0; font-size:0.85rem; }
+        .cmp-table th, .cmp-table td { padding:0.45rem 0.5rem; border:1px solid var(--border); text-align:center; }
+        .cmp-table th { background:rgba(171,107,219,0.08); color:var(--accent); font-weight:600; font-size:0.75rem; }
+        .cmp-table td:first-child { text-align:left; font-weight:600; color:var(--text-secondary); font-size:0.82rem; }
+        .legend { display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; margin-top:0.5rem; font-size:0.82rem; }
+        .legend-item { display:flex; align-items:center; gap:0.3rem; }
+        .legend-dot { width:10px; height:10px; border-radius:50%; }
+    </style>
+</head>
+<body>
+  <header class="header">
+    <button class="hamburger" id="hamburger" aria-label="메뉴"><span></span><span></span><span></span></button>
+    <div class="header-logo">MyAcademy<span class="subtitle">선형대수 × 그래픽스 × AI</span></div>
+    <button class="theme-toggle" id="themeToggle" aria-label="테마 전환"><span class="theme-toggle-icon"></span></button>
+  </header>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <nav class="sidebar" id="sidebar"></nav>
+
+  <main class="main-content">
+    <div class="content">
+      <div class="page-title">
+        <div class="tag tag-lesson">PHASE 4</div>
+        <h1>Slerp & 보간</h1>
+        <p class="page-desc">두 회전 사이를 최단 경로, 일정 속도로. 구면 선형 보간.</p>
+      </div>
+
+      <!-- ══════════ 1. Lerp vs Slerp ══════════ -->
+      <section>
+        <h2 id="comparison">Lerp vs NLerp vs Slerp — 2D 원 위에서</h2>
+        <p>3D 구면($S^3$)은 그리기 어려우니, <strong>2D 단위원</strong> 위에서 직관을 잡는다. 점 간격으로 등속 여부를 확인.</p>
+
+        <div class="interactive-section" style="flex-direction:column;align-items:center;">
+          <div class="canvas-wrap">
+            <canvas id="cvsSlerp" width="600" height="600"></canvas>
+            <div class="t-slider-row"><span class="slider-label">t</span><input type="range" id="slT" min="0" max="1" step="0.01" value="0.5"><span class="t-val" id="vT">0.50</span></div>
+            <div class="legend">
+              <div class="legend-item"><div class="legend-dot" style="background:var(--negative);"></div>Lerp (직선)</div>
+              <div class="legend-item"><div class="legend-dot" style="background:var(--vec-a);"></div>NLerp (정규화)</div>
+              <div class="legend-item"><div class="legend-dot" style="background:var(--positive);"></div>Slerp (원호, 등속)</div>
+            </div>
+          </div>
+          <div class="math-panel" style="width:100%;max-width:600px;min-width:unset;">
+            <h3>비교</h3>
+            <div class="calc-group">
+              <div class="label">Lerp (직선)</div>
+              <div class="calc-row" id="slLerp"></div>
+            </div>
+            <div class="calc-group">
+              <div class="label">NLerp (정규화)</div>
+              <div class="calc-row" id="slNlerp"></div>
+            </div>
+            <div class="calc-group">
+              <div class="label">Slerp (등속 원호)</div>
+              <div class="calc-row" id="slSlerp"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ 2. 공식 ══════════ -->
+      <section>
+        <h2 id="formula">Slerp 공식</h2>
+        <div class="formula-box">
+          $$\text{Slerp}(q_0, q_1, t) = \frac{\sin((1-t)\Omega)}{\sin\Omega}\,q_0 + \frac{\sin(t\Omega)}{\sin\Omega}\,q_1$$
+          <p class="note">$\Omega = \arccos(q_0 \cdot q_1)$ = 두 쿼터니언 사이 각도.</p>
+        </div>
+        <div class="formula-box">
+          <p style="font-weight:600;color:var(--text-primary);">왜 등속인가 (1줄 증명)</p>
+          <p>시각 $t$에서 $q_0$으로부터의 각도 = $t\Omega$. 미분: 각속도 $= \frac{d}{dt}(t\Omega) = \Omega$ (상수). <strong>끝.</strong></p>
+        </div>
+
+        <table class="cmp-table">
+          <thead><tr><th></th><th>Lerp</th><th>NLerp</th><th>Slerp</th></tr></thead>
+          <tbody>
+            <tr><td>구면 위?</td><td style="color:var(--negative)">X</td><td style="color:var(--positive)">O</td><td style="color:var(--positive)">O</td></tr>
+            <tr><td>등속?</td><td style="color:var(--negative)">X</td><td style="color:var(--negative)">X</td><td style="color:var(--positive)">O</td></tr>
+            <tr><td>비용</td><td>저렴</td><td>저렴</td><td>sin/acos</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ══════════ 3. 오일러 vs Slerp ══════════ -->
+      <section>
+        <h2 id="euler-vs-slerp">오일러 Lerp vs Slerp</h2>
+        <p>각도 A와 B 사이를 보간. 오일러 Lerp은 <strong>먼 길로 돌아갈 수 있다</strong>. Slerp은 항상 최단 호.</p>
+
+        <div class="interactive-section" style="flex-direction:column;align-items:center;">
+          <div class="canvas-wrap">
+            <canvas id="cvsEulerVs" width="600" height="600"></canvas>
+            <div class="t-slider-row"><span class="slider-label">t</span><input type="range" id="slT2" min="0" max="1" step="0.01" value="0.5"><span class="t-val" id="vT2">0.50</span></div>
+            <div class="t-slider-row"><span class="slider-label">A</span><input type="range" id="slA" min="0" max="360" step="1" value="30"><span class="t-val" id="vA">30°</span></div>
+            <div class="t-slider-row"><span class="slider-label">B</span><input type="range" id="slB" min="0" max="360" step="1" value="300"><span class="t-val" id="vB">300°</span></div>
+          </div>
+          <div class="math-panel" style="width:100%;max-width:600px;min-width:unset;">
+            <div class="calc-group">
+              <div class="label">오일러 Lerp 경로</div>
+              <div class="calc-row" id="eulerPath"></div>
+            </div>
+            <div class="calc-group">
+              <div class="label">Slerp (최단 호) 경로</div>
+              <div class="calc-row" id="slerpPath"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ 4. 실전 ══════════ -->
+      <section>
+        <h2 id="practice">NLerp vs Slerp — 실무 선택</h2>
+        <div class="info-cards">
+          <div class="info-card">
+            <h4>NLerp — 대부분의 관절</h4>
+            <p>sin/acos 없이 저렴. 프레임 간 각도 차이가 작으면 Slerp과 거의 같음. 매 프레임 수백 관절에 적용.</p>
+          </div>
+          <div class="info-card">
+            <h4>Slerp — 정확한 등속</h4>
+            <p>카메라 전이, 컷씬, 긴 회전. $\Omega$가 크면 NLerp 오차가 눈에 보임.</p>
+          </div>
+        </div>
+        <div class="callout">
+          <div class="callout-title">특이 케이스 처리</div>
+          <p style="margin-bottom:0;">$\Omega \approx 0$: $\sin\Omega \approx 0$ → NLerp으로 fallback. &nbsp; $q_0 \cdot q_1 < 0$: 대척점이 가까움 → $q_1$을 $-q_1$로 뒤집어 최단 호.</p>
+        </div>
+      </section>
+
+      <!-- ══════════ 5. 직접 해보기 ══════════ -->
+      <section class="exercises">
+        <h2 id="exercises">직접 해보기</h2>
+        <ol>
+          <li><strong>Lerp 실패:</strong> 캔버스 ①에서 Lerp(빨강) 점이 원 안쪽으로 들어가는 걸 확인.</li>
+          <li><strong>NLerp 불균일:</strong> 같은 캔버스에서 NLerp(골드) 점 간격이 양 끝에서 좁아지는 걸 확인.</li>
+          <li><strong>Slerp 등속:</strong> Slerp(초록) 점이 원호 위에서 등간격인 걸 확인.</li>
+          <li><strong>최단 경로:</strong> 캔버스 ②에서 A=30°, B=300°. 오일러(빨강)가 270° 돌아가지만 Slerp(초록)은 90°.</li>
+          <li><strong>NLerp 충분?:</strong> A와 B를 가까이 놓아봐 (차이 10°). NLerp≈Slerp.</li>
+        </ol>
+      </section>
+    </div>
+
+    <div class="page-nav" id="page-nav"></div>
+
+    <script>
+    var PAGE_ID = "p4_05";
+    var ON_THIS_PAGE = [
+      { id: "comparison", label: "Lerp vs Slerp" },
+      { id: "formula", label: "Slerp 공식" },
+      { id: "euler-vs-slerp", label: "오일러 vs Slerp" },
+      { id: "practice", label: "실무 선택" },
+      { id: "exercises", label: "직접 해보기" }
+    ];
+    </script>
+    <script src="nav.js"></script>
+  </main>
+
+  <script src="canvas-lib.js"></script>
+  <script>
+var RAD=Math.PI/180, DEG=180/Math.PI;
+function fmt(n){return n.toFixed(3);}
+
+// ============================================================
+//  캔버스 1 — Lerp / NLerp / Slerp 비교 (2D 단위원)
+// ============================================================
+(function(){
+    var c=createCanvas('cvsSlerp',{width:600,height:600,unit:120});
+    var t=0.5;
+    // q0, q1: 단위원 위의 두 각도
+    var ang0=30*RAD, ang1=150*RAD;
+    var q0={x:Math.cos(ang0),y:Math.sin(ang0)};
+    var q1={x:Math.cos(ang1),y:Math.sin(ang1)};
+
+    var drag=c.makeDraggable([
+        {id:'q0',get:function(){return q0;},set:function(v){var m=mag(v);if(m>0.1){q0.x=v.x/m;q0.y=v.y/m;}},color:c.colors.vecA},
+        {id:'q1',get:function(){return q1;},set:function(v){var m=mag(v);if(m>0.1){q1.x=v.x/m;q1.y=v.y/m;}},color:c.colors.vecB}
+    ],render,{clamp:2});
+
+    var slT=document.getElementById('slT'),vT=document.getElementById('vT');
+    slT.addEventListener('input',function(e){t=parseFloat(e.target.value);vT.textContent=t.toFixed(2);render();});
+
+    function render(){
+        c.clear();c.drawGrid();
+        var ctx=c.ctx;
+        var o=c.toS({x:0,y:0});
+
+        // 단위원
+        ctx.strokeStyle='rgba(171,107,219,0.2)';ctx.lineWidth=2;
+        ctx.beginPath();ctx.arc(o.x,o.y,c.UNIT,0,Math.PI*2);ctx.stroke();
+
+        // Ω = 두 점 사이 각도
+        var dotP=q0.x*q1.x+q0.y*q1.y;
+        dotP=Math.max(-1,Math.min(1,dotP));
+        var omega=Math.acos(dotP);
+
+        // ── 등간격 점 (각 방법의 속도 시각화) ──
+        var DOTS=12;
+        for(var i=0;i<=DOTS;i++){
+            var ti=i/DOTS;
+
+            // Lerp
+            var lx=(1-ti)*q0.x+ti*q1.x, ly=(1-ti)*q0.y+ti*q1.y;
+            var ls=c.toS({x:lx,y:ly});
+            ctx.beginPath();ctx.arc(ls.x,ls.y,3,0,Math.PI*2);
+            ctx.fillStyle='rgba(252,98,85,0.4)';ctx.fill();
+
+            // NLerp
+            var nm=Math.sqrt(lx*lx+ly*ly);
+            if(nm>0.001){var nlx=lx/nm,nly=ly/nm;
+            var ns=c.toS({x:nlx,y:nly});
+            ctx.beginPath();ctx.arc(ns.x,ns.y,3,0,Math.PI*2);
+            ctx.fillStyle='rgba(232,200,64,0.5)';ctx.fill();}
+
+            // Slerp
+            if(omega>0.001){
+                var s0=Math.sin((1-ti)*omega)/Math.sin(omega);
+                var s1=Math.sin(ti*omega)/Math.sin(omega);
+                var sx=s0*q0.x+s1*q1.x, sy=s0*q0.y+s1*q1.y;
+                var ss=c.toS({x:sx,y:sy});
+                ctx.beginPath();ctx.arc(ss.x,ss.y,4,0,Math.PI*2);
+                ctx.fillStyle='rgba(131,193,103,0.6)';ctx.fill();
+            }
+        }
+
+        // ── 현재 t의 세 점 (큰 점) ──
+        // Lerp
+        var lCur={x:(1-t)*q0.x+t*q1.x, y:(1-t)*q0.y+t*q1.y};
+        var lCs=c.toS(lCur);
+        ctx.beginPath();ctx.arc(lCs.x,lCs.y,7,0,Math.PI*2);
+        ctx.fillStyle=c.colors.proj;ctx.fill();
+
+        // NLerp
+        var nlm=mag(lCur);
+        var nlCur=nlm>0.001?{x:lCur.x/nlm,y:lCur.y/nlm}:q0;
+        var nlCs=c.toS(nlCur);
+        ctx.beginPath();ctx.arc(nlCs.x,nlCs.y,7,0,Math.PI*2);
+        ctx.fillStyle=c.colors.vecA;ctx.fill();
+
+        // Slerp
+        var slCur;
+        if(omega>0.001){
+            var s0=Math.sin((1-t)*omega)/Math.sin(omega);
+            var s1=Math.sin(t*omega)/Math.sin(omega);
+            slCur={x:s0*q0.x+s1*q1.x, y:s0*q0.y+s1*q1.y};
+        } else { slCur={x:(1-t)*q0.x+t*q1.x,y:(1-t)*q0.y+t*q1.y}; }
+        var slCs=c.toS(slCur);
+        ctx.beginPath();ctx.arc(slCs.x,slCs.y,7,0,Math.PI*2);
+        ctx.fillStyle=c.colors.vecC;ctx.fill();
+
+        // Lerp 직선 (빨강 점선)
+        var q0s=c.toS(q0),q1s=c.toS(q1);
+        ctx.strokeStyle='rgba(252,98,85,0.3)';ctx.lineWidth=1.5;ctx.setLineDash([5,3]);
+        ctx.beginPath();ctx.moveTo(q0s.x,q0s.y);ctx.lineTo(q1s.x,q1s.y);ctx.stroke();ctx.setLineDash([]);
+
+        // q0, q1 핸들
+        c.drawVector(q0,c.colors.vecA,'q₀');
+        c.drawVector(q1,c.colors.vecB,'q₁');
+        c.drawHandle(q0,c.colors.vecA,drag.isHovered('q0'));
+        c.drawHandle(q1,c.colors.vecB,drag.isHovered('q1'));
+
+        // 패널
+        document.getElementById('slLerp').innerHTML=
+            '<span style="color:var(--negative)">('+fmt(lCur.x)+', '+fmt(lCur.y)+')</span> |p|='+fmt(mag(lCur))+' — 원 안쪽!';
+        document.getElementById('slNlerp').innerHTML=
+            '<span class="va">('+fmt(nlCur.x)+', '+fmt(nlCur.y)+')</span> — 원 위, 불균일';
+        document.getElementById('slSlerp').innerHTML=
+            '<span class="vc">('+fmt(slCur.x)+', '+fmt(slCur.y)+')</span> — 원 위, <strong>등속</strong>';
+    }
+    render();
+})();
+
+// ============================================================
+//  캔버스 2 — 오일러 Lerp vs Slerp (2D 회전 각도)
+// ============================================================
+(function(){
+    var c=createCanvas('cvsEulerVs',{width:600,height:600,unit:120});
+    var t=0.5, angA=30, angB=300;
+
+    var slT=document.getElementById('slT2'),vT=document.getElementById('vT2');
+    var slA=document.getElementById('slA'),vA=document.getElementById('vA');
+    var slB=document.getElementById('slB'),vB=document.getElementById('vB');
+    slT.addEventListener('input',function(e){t=parseFloat(e.target.value);vT.textContent=t.toFixed(2);render();});
+    slA.addEventListener('input',function(e){angA=parseInt(e.target.value);vA.textContent=angA+'°';render();});
+    slB.addEventListener('input',function(e){angB=parseInt(e.target.value);vB.textContent=angB+'°';render();});
+
+    function shortArc(a,b){
+        var diff=b-a;
+        while(diff>180) diff-=360;
+        while(diff<-180) diff+=360;
+        return diff;
+    }
+
+    function render(){
+        c.clear();c.drawGrid();
+        var ctx=c.ctx;
+        var o=c.toS({x:0,y:0});
+
+        // 단위원
+        ctx.strokeStyle='rgba(171,107,219,0.2)';ctx.lineWidth=2;
+        ctx.beginPath();ctx.arc(o.x,o.y,c.UNIT,0,Math.PI*2);ctx.stroke();
+
+        var aR=angA*RAD, bR=angB*RAD;
+        var R=1.8; // 화살표 길이
+
+        // A, B 위치
+        var pA={x:Math.cos(aR)*R,y:Math.sin(aR)*R};
+        var pB={x:Math.cos(bR)*R,y:Math.sin(bR)*R};
+        c.drawVector(pA,c.colors.vecA,'A ('+angA+'°)');
+        c.drawVector(pB,c.colors.vecB,'B ('+angB+'°)');
+
+        // 오일러 Lerp 경로 (빨강): 각도 직선 보간
+        var eulerAng=(1-t)*angA+t*angB;
+        var eulerR=eulerAng*RAD;
+
+        // 등간격 점 (오일러)
+        ctx.fillStyle='rgba(252,98,85,0.3)';
+        for(var i=0;i<=16;i++){
+            var ti=i/16;
+            var ea=((1-ti)*angA+ti*angB)*RAD;
+            var ep={x:Math.cos(ea)*R,y:Math.sin(ea)*R};
+            var es=c.toS(ep);
+            ctx.beginPath();ctx.arc(es.x,es.y,3,0,Math.PI*2);ctx.fill();
+        }
+
+        // 오일러 Lerp 경로 호 (빨강)
+        var startA=Math.min(aR,bR), endA=Math.max(aR,bR);
+        if(angB>angA){startA=aR;endA=bR;} else {startA=bR;endA=aR;}
+        ctx.strokeStyle='rgba(252,98,85,0.25)';ctx.lineWidth=3;
+        ctx.beginPath();
+        for(var i=0;i<=64;i++){
+            var ti=i/64;
+            var a=((1-ti)*angA+ti*angB)*RAD;
+            var p=c.toS({x:Math.cos(a)*R,y:Math.sin(a)*R});
+            if(i===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);
+        }
+        ctx.stroke();
+
+        // Slerp 경로 (초록): 최단 호
+        var diff=shortArc(angA,angB);
+        ctx.strokeStyle='rgba(131,193,103,0.3)';ctx.lineWidth=3;
+        ctx.beginPath();
+        for(var i=0;i<=64;i++){
+            var ti=i/64;
+            var sa=(angA+ti*diff)*RAD;
+            var p=c.toS({x:Math.cos(sa)*R,y:Math.sin(sa)*R});
+            if(i===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);
+        }
+        ctx.stroke();
+
+        // Slerp 등간격 점
+        ctx.fillStyle='rgba(131,193,103,0.5)';
+        for(var i=0;i<=16;i++){
+            var ti=i/16;
+            var sa=(angA+ti*diff)*RAD;
+            var sp={x:Math.cos(sa)*R,y:Math.sin(sa)*R};
+            var ss=c.toS(sp);
+            ctx.beginPath();ctx.arc(ss.x,ss.y,4,0,Math.PI*2);ctx.fill();
+        }
+
+        // 현재 t 큰 점
+        var eulerP={x:Math.cos(eulerR)*R,y:Math.sin(eulerR)*R};
+        var eulerS=c.toS(eulerP);
+        ctx.beginPath();ctx.arc(eulerS.x,eulerS.y,8,0,Math.PI*2);
+        ctx.fillStyle=c.colors.proj;ctx.fill();
+
+        var slerpAng=(angA+t*diff)*RAD;
+        var slerpP={x:Math.cos(slerpAng)*R,y:Math.sin(slerpAng)*R};
+        var slerpS=c.toS(slerpP);
+        ctx.beginPath();ctx.arc(slerpS.x,slerpS.y,8,0,Math.PI*2);
+        ctx.fillStyle=c.colors.vecC;ctx.fill();
+
+        // 패널
+        var eulerDeg=((1-t)*angA+t*angB);
+        var slerpDeg=angA+t*diff;
+        var eulerTravel=Math.abs(angB-angA);
+        var slerpTravel=Math.abs(diff);
+        document.getElementById('eulerPath').innerHTML=
+            '<span style="color:var(--negative)">'+eulerDeg.toFixed(1)+'°</span> (총 경로: '+eulerTravel+'°'+(eulerTravel>180?' — 먼 길!':'')+')'  ;
+        document.getElementById('slerpPath').innerHTML=
+            '<span class="vc">'+slerpDeg.toFixed(1)+'°</span> (총 경로: '+slerpTravel.toFixed(0)+'° — 최단 호)';
+    }
+    render();
+})();
+  </script>
+</body>
+</html>
