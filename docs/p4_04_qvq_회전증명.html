@@ -310,17 +310,16 @@ function drawVec3D(c,from,to,color,label){
         var result=[qvqs[1],qvqs[2],qvqs[3]];
         drawVec3D(c,[0,0,0],[result[0]*2,result[1]*2,result[2]*2],c.colors.vecC,"qvq*");
 
-        // 회전 호
+        // 회전 호 (v의 xy 성분이 z축 기준으로 회전, z 성분은 불변)
         if(Math.abs(theta)>2){
+            var vPerp=Math.sqrt(V[0]*V[0]+V[1]*V[1]);
+            var startAng=Math.atan2(V[1],V[0]);
             ctx.strokeStyle='rgba(131,193,103,0.3)';ctx.lineWidth=1.5;
             ctx.beginPath();
             for(var i=0;i<=Math.abs(theta);i++){
                 var a=i/Math.abs(theta)*theta*RAD;
-                var px=Math.cos(a)*2, py=Math.sin(a)*2;
-                var s=c.toS(proj([px,0,py*0])); // xz plane for z-axis rotation
-                // 실제로는 x-y plane rotation (z축)
-                var p3=[Math.cos(a)*2, Math.sin(a)*2, 0];
-                s=c.toS(proj(p3));
+                var p3=[Math.cos(startAng+a)*vPerp*2, Math.sin(startAng+a)*vPerp*2, V[2]*2];
+                var s=c.toS(proj(p3));
                 if(i===0) ctx.moveTo(s.x,s.y); else ctx.lineTo(s.x,s.y);
             }
             ctx.stroke();
