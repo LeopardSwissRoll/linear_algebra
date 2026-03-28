@@ -119,10 +119,6 @@
           <div class="canvas-wrap">
             <canvas id="cvsQVQ" width="600" height="500"></canvas>
             <div class="t-slider-row"><span class="slider-label">θ</span><input type="range" id="slQVQ" min="0" max="360" step="1" value="90"><span class="t-val" id="vQVQ">90°</span></div>
-            <div style="display:flex;gap:0.5rem;margin-top:0.5rem;justify-content:center;">
-              <button class="pbtn active" id="btnQ">q</button>
-              <button class="pbtn" id="btnNegQ">−q (같은 회전)</button>
-            </div>
           </div>
           <div class="math-panel" style="width:100%;max-width:600px;min-width:unset;">
             <h3>중간 과정</h3>
@@ -275,21 +271,18 @@ function drawVec3D(c,from,to,color,label){
 // ============================================================
 (function(){
     var c=createCanvas('cvsQVQ',{width:600,height:500,unit:70});
-    var theta=90, useNegQ=false;
-    // 축 = z, 벡터 = (1, 0, 0)
-    var AXIS=[0,0,1], V=[1,0,1];
+    var theta=90;
+    // 축 = z, 벡터 = -y → z축 기준으로 xy 평면에서 원을 그림
+    var AXIS=[0,0,1], V=[0,-1,0];
 
     var sl=document.getElementById('slQVQ'),vl=document.getElementById('vQVQ');
     sl.addEventListener('input',function(e){theta=parseInt(e.target.value);vl.textContent=theta+'°';render();});
-    document.getElementById('btnQ').addEventListener('click',function(){useNegQ=false;this.classList.add('active');document.getElementById('btnNegQ').classList.remove('active');render();});
-    document.getElementById('btnNegQ').addEventListener('click',function(){useNegQ=true;this.classList.add('active');document.getElementById('btnQ').classList.remove('active');render();});
 
     function render(){
         c.clear();
         var ctx=c.ctx;
         var halfRad=theta/2*RAD;
         var q=[Math.cos(halfRad), AXIS[0]*Math.sin(halfRad), AXIS[1]*Math.sin(halfRad), AXIS[2]*Math.sin(halfRad)];
-        if(useNegQ) q=[-q[0],-q[1],-q[2],-q[3]];
 
         var v=[0, V[0], V[1], V[2]]; // 순수 쿼터니언
         var qv=qMul(q,v);
@@ -310,11 +303,24 @@ function drawVec3D(c,from,to,color,label){
         var result=[qvqs[1],qvqs[2],qvqs[3]];
         drawVec3D(c,[0,0,0],[result[0]*2,result[1]*2,result[2]*2],c.colors.vecC,"qvq*");
 
-        // 회전 호 (v의 xy 성분이 z축 기준으로 회전, z 성분은 불변)
-        if(Math.abs(theta)>2){
-            var vPerp=Math.sqrt(V[0]*V[0]+V[1]*V[1]);
-            var startAng=Math.atan2(V[1],V[0]);
-            ctx.strokeStyle='rgba(131,193,103,0.3)';ctx.lineWidth=1.5;
+        // 전체 회전 궤적 (연한 점선 원) — v가 축 기준으로 도는 전체 경로
+        var vPerp=Math.sqrt(V[0]*V[0]+V[1]*V[1]);
+        var startAng=Math.atan2(V[1],V[0]);
+        if(vPerp>0.01){
+            ctx.strokeStyle='rgba(200,200,220,0.15)';ctx.lineWidth=1.5;ctx.setLineDash([5,4]);
+            ctx.beginPath();
+            for(var i=0;i<=72;i++){
+                var a=i*Math.PI*2/72;
+                var p3=[Math.cos(startAng+a)*vPerp*2, Math.sin(startAng+a)*vPerp*2, V[2]*2];
+                var s=c.toS(proj(p3));
+                if(i===0) ctx.moveTo(s.x,s.y); else ctx.lineTo(s.x,s.y);
+            }
+            ctx.closePath();ctx.stroke();ctx.setLineDash([]);
+        }
+
+        // 회전 호 (실제 θ만큼, 빨강 실선)
+        if(Math.abs(theta)>2 && vPerp>0.01){
+            ctx.strokeStyle='rgba(252,98,85,0.7)';ctx.lineWidth=3;
             ctx.beginPath();
             for(var i=0;i<=Math.abs(theta);i++){
                 var a=i/Math.abs(theta)*theta*RAD;
@@ -332,7 +338,7 @@ function drawVec3D(c,from,to,color,label){
 
         // 패널
         document.getElementById('qvqQ').innerHTML=
-            (useNegQ?'<span style="color:var(--negative)">−q = ':'<span style="color:var(--accent)">q = ')+fmtQ(q)+'</span>';
+            '<span style="color:var(--accent)">q = '+fmtQ(q)+'</span>';
         document.getElementById('qvqV').innerHTML=
             'v = '+fmtQ(v)+' <span style="color:var(--positive)">(실수부 = 0 ✓)</span>';
 
